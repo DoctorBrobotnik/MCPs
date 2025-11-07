@@ -276,6 +276,78 @@ See MCP_Builder_Instruction_Template.md for detailed setup instructions.
 5. **Check error handling** - Every tool must have try/except with user-friendly messages
 6. **Build and verify** - Always build the Docker image and test locally before deployment
 
+## Version Control and Git Workflow
+
+All MCP server development is version-controlled with Git and hosted on GitHub at `https://github.com/DoctorBrobotnik/MCPs`.
+
+### Git Workflow for MCP Development
+
+**When implementing new tools or features:**
+
+1. **Create a feature branch** (optional, for larger features):
+   ```bash
+   git checkout -b feature/tool-name
+   ```
+
+2. **Make changes to source files** (src/, utils/, etc.)
+
+3. **Build and test locally**:
+   ```bash
+   npm run build
+   docker build -t [service-name]-mcp .
+   ```
+
+4. **Stage your changes**:
+   ```bash
+   git add .
+   ```
+
+5. **Commit with descriptive message**:
+   ```bash
+   git commit -m "Add [tool_name] tool - [description]"
+   ```
+
+6. **Push to GitHub**:
+   ```bash
+   git push origin main  # or your feature branch
+   ```
+
+### Commit Message Guidelines
+
+- Use imperative mood: "Add tool" not "Added tool"
+- Start with what was added/changed: "Add discord_create_thread tool"
+- Include a brief description: "Add discord_create_thread tool - Create conversation threads with auto-archive"
+- Reference planning documents when relevant: "Implement Tier 1 tools from TIER1_IMPLEMENTATION_PLAN.md"
+
+### Important Notes
+
+- The `.gitignore` file automatically excludes:
+  - `node_modules/`, `build/`, `dist/` directories
+  - `.env` files and all secrets
+  - IDE files and OS clutter
+  - Compiled JavaScript and map files
+
+- **Never commit**:
+  - `.env` files or credentials
+  - Discord bot tokens (use Docker secrets instead)
+  - Build artifacts (automatically ignored)
+  - node_modules (automatically ignored)
+
+- **Always commit**:
+  - Source code (`src/` directory)
+  - Configuration files (package.json, tsconfig.json, Dockerfile)
+  - Documentation (README.md, planning documents)
+  - Test files and examples
+
+### Planning Documents in Git
+
+Planning documents serve as persistent records of implementation strategy:
+- `TIER1_IMPLEMENTATION_PLAN.md` - Detailed specs for 10 essential tools
+- `FUTURE_TOOLS.md` - Recommendations for Tier 2-4 tools
+- These should be committed and updated as implementation progresses
+
+---
+
 ## Setup Instructions for Users
 
 When creating a new MCP server, include a simplified setup section in the readme that:

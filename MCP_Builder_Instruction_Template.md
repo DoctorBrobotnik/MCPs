@@ -1017,9 +1017,76 @@ MIT License
 
   
 
+## VERSION CONTROL AND GIT WORKFLOW
+
+All MCP server development must be version-controlled with Git and hosted on GitHub at `https://github.com/DoctorBrobotnik/MCPs`.
+
+### Git Workflow Requirements
+
+**When implementing new tools or features:**
+
+1. **Create a feature branch** (optional, for larger features):
+   ```bash
+   git checkout -b feature/tool-name
+   ```
+
+2. **Make changes to source files** (src/, utils/, etc.)
+
+3. **Build and test locally**:
+   ```bash
+   npm run build  # TypeScript projects
+   docker build -t [service-name]-mcp .
+   ```
+
+4. **Stage your changes**:
+   ```bash
+   git add .
+   ```
+
+5. **Commit with descriptive message**:
+   ```bash
+   git commit -m "Add [tool_name] tool - Brief description"
+   ```
+
+6. **Push to GitHub**:
+   ```bash
+   git push origin main  # or your feature branch
+   ```
+
+### Commit Message Guidelines
+
+- Use imperative mood: "Add tool" not "Added tool"
+- Be specific: "Add discord_create_thread tool"
+- Include context: "Add discord_create_thread - Create conversation threads with auto-archive"
+- Reference planning documents when implementing planned features
+
+### What NOT to Commit
+
+- `.env` files or credentials (use Docker secrets instead)
+- `node_modules/`, `build/`, `dist/` directories (automatically ignored by .gitignore)
+- IDE configuration files (automatically ignored)
+- Build artifacts and compiled files
+
+### What to Always Commit
+
+- Source code in `src/` directory
+- Configuration files (package.json, tsconfig.json, Dockerfile, etc.)
+- Documentation (README.md, planning documents like TIER1_IMPLEMENTATION_PLAN.md)
+- Test files and examples
+- `.gitignore` file
+
+### Planning Documents in Git
+
+Keep implementation plans in the repository as persistent records:
+- `TIER1_IMPLEMENTATION_PLAN.md` - Detailed specifications for planned tools
+- `FUTURE_TOOLS.md` - Roadmap for future tools
+- Update these as implementation progresses and commit changes
+
+---
+
 ## FINAL GENERATION CHECKLIST FOR THE LLM
 
-  
+
 
 Before presenting your response, verify:
 
