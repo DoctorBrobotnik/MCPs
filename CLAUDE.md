@@ -1005,7 +1005,7 @@ git push origin main
 If you need to restore catalogs from backup:
 ```bash
 git clone https://github.com/DoctorBrobotnik/MCP_Catalogs.git
-cp MCP_Catalogs/*.yaml $env:USERPROFILE/.docker/mcp/catalogs/
+cp MCP_Catalogs/catalogs/*.yaml $env:USERPROFILE/.docker/mcp/
 ```
 
 **Why Catalogs Are Backed Up:**
