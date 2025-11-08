@@ -47,3 +47,6 @@ venv/
 
 # Claude
 .claude/
+
+# Plans
+plans/
