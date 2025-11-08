@@ -69,14 +69,19 @@ These rules prevent runtime errors and are essential for all MCP server implemen
 
 ### Docker Requirements
 - All MCP servers must run in Docker containers
-- Use `python:3.11-slim` as base image
-- Create non-root user (`mcpuser`)
-- Set `PYTHONUNBUFFERED=1` environment variable
+- **Base Images by Language:**
+  - TypeScript: Use `node:18-slim` or `node:20-slim`
+  - Python: Use `python:3.11-slim` or `python:3.12-slim`
+- Create non-root user (`mcpuser` with UID > 5000)
+- **Environment Variables:**
+  - TypeScript: Set `NODE_ENV=production`
+  - Python: Set `PYTHONUNBUFFERED=1`
 - Log to stderr with ISO format timestamps
+- Use multi-stage builds for TypeScript (builder + production stages)
 
-## Common MCP Server Pattern
+## Common MCP Server Pattern (Python)
 
-A typical tool follows this structure:
+A typical Python tool using FastMCP follows this structure:
 
 ```python
 @mcp.tool()
@@ -95,6 +100,136 @@ async def tool_name(param1: str = "", param2: str = "") -> str:
         logger.error(f"Error: {e}")
         return f"❌ Error: {str(e)}"
 ```
+
+## Common MCP Server Pattern (TypeScript)
+
+A typical TypeScript MCP server tool follows this structure using the official MCP SDK:
+
+```typescript
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+
+// Initialize server
+const server = new Server(
+  {
+    name: "service-name-mcp",
+    version: "1.0.0",
+  },
+  {
+    capabilities: {
+      tools: {},
+    },
+  }
+);
+
+// Register tool handlers
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: "service_tool_name",
+        description: "Single-line description of what this tool does",
+        inputSchema: {
+          type: "object",
+          properties: {
+            param1: {
+              type: "string",
+              description: "Description of param1",
+            },
+            param2: {
+              type: "string",
+              description: "Description of param2",
+            },
+          },
+          required: ["param1"],
+        },
+      },
+    ],
+  };
+});
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request.params;
+
+  if (name === "service_tool_name") {
+    return await handleToolName(args);
+  }
+
+  throw new Error(`Unknown tool: ${name}`);
+});
+
+// Tool implementation
+async function handleToolName(args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+  const param1 = args.param1 as string;
+  const param2 = (args.param2 as string) || "";
+
+  console.error(`[${new Date().toISOString()}] Executing service_tool_name with param1=${param1}`);
+
+  // Validate required parameters
+  if (!param1 || param1.trim() === "") {
+    return {
+      content: [
+        {
+          type: "text",
+          text: "❌ Error: param1 is required",
+        },
+      ],
+    };
+  }
+
+  try {
+    // Implementation here
+    const result = "success";
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `✅ Result: ${result}`,
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[${new Date().toISOString()}] Error: ${errorMessage}`);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `❌ Error: ${errorMessage}`,
+        },
+      ],
+    };
+  }
+}
+
+// Start server
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error(`[${new Date().toISOString()}] Service MCP server running on stdio`);
+}
+
+main().catch((error) => {
+  console.error(`[${new Date().toISOString()}] Fatal error:`, error);
+  process.exit(1);
+});
+```
+
+**Key TypeScript patterns:**
+- Use official `@modelcontextprotocol/sdk` package
+- Register tools via `ListToolsRequestSchema` handler
+- Handle tool calls via `CallToolRequestSchema` handler
+- Return objects with `content` array containing `{type: "text", text: "..."}` structures
+- Log to `console.error()` for stderr output with ISO timestamps
+- Use proper TypeScript types for parameters and return values
+- Validate parameters explicitly (check for undefined, null, empty strings)
+- Handle errors with try/catch and return user-friendly messages
 
 ## File Organization and Saving Convention
 
@@ -233,6 +368,8 @@ docker mcp secret ls  # Verify
 
 ## API Integration Patterns
 
+### Python (httpx)
+
 For external API calls:
 
 ```python
@@ -247,6 +384,124 @@ async with httpx.AsyncClient() as client:
     except Exception as e:
         return f"❌ Error: {str(e)}"
 ```
+
+### TypeScript (fetch API)
+
+For external API calls in TypeScript, use the native `fetch` API with proper error handling:
+
+```typescript
+async function callExternalAPI(url: string, apiKey: string): Promise<{ content: Array<{ type: string; text: string }> }> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "User-Agent": "MCP-Server/1.0",
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        content: [
+          {
+            type: "text",
+            text: `❌ API Error: ${response.status} ${response.statusText}\n${errorText}`,
+          },
+        ],
+      };
+    }
+
+    const data = await response.json();
+    const formattedData = JSON.stringify(data, null, 2);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `✅ Result:\n${formattedData}`,
+        },
+      ],
+    };
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "⏱️ Request timed out after 10 seconds",
+          },
+        ],
+      };
+    }
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[${new Date().toISOString()}] API Error: ${errorMessage}`);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `❌ Error: ${errorMessage}`,
+        },
+      ],
+    };
+  }
+}
+```
+
+**Advanced: Retry Logic with Exponential Backoff**
+
+For APIs that may be temporarily unavailable:
+
+```typescript
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      // Retry on 5xx errors or 429 (rate limit)
+      if (response.status >= 500 || response.status === 429) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
+        console.error(`[${new Date().toISOString()}] Attempt ${attempt + 1} failed, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError || new Error("Max retries exceeded");
+}
+```
+
+**Best practices:**
+- Always set timeouts using `AbortController`
+- Handle HTTP errors explicitly (check `response.ok`)
+- Log errors to stderr with timestamps
+- Return user-friendly error messages with emoji prefixes
+- Use retry logic for transient failures (5xx, 429)
+- Implement exponential backoff to avoid overwhelming APIs
 
 ## System Command Execution
 
@@ -297,6 +552,98 @@ docker build -t [server-name]-mcp $env:USERPROFILE/Repos/Personal/MCPs/[service-
 ```
 
 ### Local Testing
+
+#### TypeScript
+
+For TypeScript MCP servers, follow these testing steps:
+
+```bash
+# Install dependencies
+npm install
+
+# Compile TypeScript
+npm run build
+
+# Set environment variables (PowerShell)
+$env:SOME_SECRET="test-value"
+
+# Set environment variables (Bash)
+export SOME_SECRET="test-value"
+
+# Run the server
+npm start
+# Or run compiled JavaScript directly
+node build/index.js
+```
+
+**Test MCP Protocol (PowerShell):**
+```powershell
+'{"jsonrpc":"2.0","method":"tools/list","id":1}' | node build/index.js
+```
+
+**Test MCP Protocol (Bash):**
+```bash
+echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | node build/index.js
+```
+
+**Expected Response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "service_tool_name",
+        "description": "Single-line description of what this tool does",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "param1": {
+              "type": "string",
+              "description": "Description of param1"
+            }
+          },
+          "required": ["param1"]
+        }
+      }
+    ]
+  }
+}
+```
+
+**Test Tool Execution:**
+```bash
+echo '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"service_tool_name","arguments":{"param1":"test"}},"id":2}' | node build/index.js
+```
+
+**Debugging TypeScript Issues:**
+```bash
+# Check TypeScript compilation errors
+npm run build
+
+# Run with verbose logging
+NODE_ENV=development npm start
+
+# Check for missing dependencies
+npm list --depth=0
+
+# Verify TypeScript configuration
+cat tsconfig.json
+```
+
+**Common TypeScript Test Failures:**
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| `Cannot find module` | Missing import or wrong path | Check import paths in `src/` files |
+| `Type 'X' is not assignable` | Type mismatch | Review function signatures and types |
+| `Module not found: @modelcontextprotocol/sdk` | Missing dependency | Run `npm install @modelcontextprotocol/sdk` |
+| No output when piping JSON | Server crashed on startup | Check `console.error()` output for errors |
+| `SyntaxError: Unexpected token` | Invalid JSON in test | Validate JSON with `jq` or online validator |
+
+#### Python
+
 ```bash
 # Set environment variables
 export SOME_SECRET="test-value"
@@ -442,8 +789,7 @@ Before building any MCP server Docker image, verify:
 - [ ] All hardcoded paths use `$env:USERPROFILE` (Windows PowerShell) or `~` (Bash/WSL)
 - [ ] No hardcoded API keys or secrets in code
 - [ ] Tool names follow `[service]_[toolname]` format (all lowercase, underscores)
-- [ ] All tool docstrings are single-line only
-- [ ] Single-line docstrings (multi-line will cause "Gateway panic error")
+- [ ] All tool docstrings are single-line only (multi-line will cause "Gateway panic error")
 
 ### Testing Before Docker
 - [ ] Run locally with `npm install && npm run build && npm start` (if possible)
@@ -457,6 +803,73 @@ Before building any MCP server Docker image, verify:
 - [ ] Image name follows pattern: `[service-name]-mcp` (lowercase with hyphens)
 - [ ] Build completes without warnings about Dockerfile casing
 
+## Code Review Before Implementation
+
+**MANDATORY**: When generating new MCP server code, you MUST use the `code-reviewer` agent to review the generated code BEFORE implementation or file creation.
+
+### Code Review Workflow
+
+For **all new MCP server implementations**:
+
+1. **Generate the code** - Create all source code, Dockerfile, package.json, etc.
+2. **Review with code-reviewer agent** - Use the Task tool with subagent_type: `code-reviewer` to review:
+   - MCP protocol compliance (correct schema, types, handlers)
+   - Error handling (proper try/catch, validation, error messages)
+   - Security issues (no hardcoded secrets, proper input validation, safe API calls)
+   - Code quality (naming conventions, structure, patterns)
+   - Docker configuration (multi-stage builds, proper permissions, env vars)
+   - Configuration files (tsconfig.json, package.json, Dockerfile)
+3. **Address findings** - Fix any issues identified by the reviewer
+4. **Final review** - Get code-reviewer approval before proceeding with file creation
+5. **Implement files** - Create actual files and Docker image only after code review is complete
+
+### What code-reviewer Checks For
+
+The code-reviewer agent will analyze:
+- ✅ Correct MCP SDK usage (ImportSchema, tool handlers, return format)
+- ✅ Parameter validation (required fields, type checking, empty string handling)
+- ✅ Error handling completeness (all code paths have try/catch or validation)
+- ✅ Tool naming conventions (`service_name_tool_name` format)
+- ✅ Docstring format (single-line only, no multi-line descriptions)
+- ✅ Type safety (proper TypeScript types, no `any` unless necessary)
+- ✅ Security issues (injection risks, hardcoded credentials, unsafe operations)
+- ✅ Docker best practices (non-root user, proper base images, multi-stage builds)
+- ✅ Timeout handling (API calls have timeouts, subprocess calls have timeouts)
+- ✅ Logging (proper stderr output with ISO timestamps)
+- ✅ Return format compliance (content array with type/text structure)
+
+### Example Usage
+
+```
+Task Description: "Review Discord MCP server code"
+
+Prompt: "Please thoroughly review this Discord MCP server TypeScript code for:
+1. MCP SDK compliance and proper protocol implementation
+2. Security vulnerabilities (hardcoded tokens, injection risks)
+3. Error handling completeness
+4. Docker configuration
+5. Code quality and naming conventions
+
+Here is the code:
+[paste all source files, Dockerfile, package.json, tsconfig.json]
+
+Provide specific findings, severity level, and recommendations for fixes."
+```
+
+### When to Use code-reviewer
+
+✅ **ALWAYS use code-reviewer when:**
+- Creating new MCP servers from scratch
+- Adding new major features or tools to existing servers
+- Significant refactoring of existing code
+- Before Docker build and deployment
+
+❌ **Do NOT skip code review for:**
+- Any new MCP server implementation
+- Any code that handles authentication or secrets
+- Any code that makes external API calls
+- Any TypeScript/Node.js code
+
 ## When Working on MCP Servers
 
 1. **Review the template** - Reference MCP_Builder_Instruction_Template.md for complete patterns
@@ -467,6 +880,7 @@ Before building any MCP server Docker image, verify:
 6. **Use Pre-Build Checklist** - Run through verification checklist before Docker build
 7. **Check Platform Syntax** - Verify you're using correct shell commands for your environment
 8. **Build and verify** - Always build the Docker image and test with JSON-RPC endpoints
+9. **Code Review Required** - Use code-reviewer agent before implementing any new MCP servers
 
 ## Version Control and Git Workflow
 

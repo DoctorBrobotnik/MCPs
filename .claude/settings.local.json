@@ -7,7 +7,9 @@
       "WebFetch(domain:gofastmcp.com)",
       "WebFetch(domain:discord.js.org)",
       "WebFetch(domain:docs.sunoapi.org)",
-      "mcp__MCP_DOCKER__browser_navigate"
+      "mcp__MCP_DOCKER__browser_navigate",
+      "Bash(mkdir:*)",
+      "Bash(docker run:*)"
     ],
     "deny": [],
     "ask": []
