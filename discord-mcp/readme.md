@@ -46,11 +46,11 @@ A Model Context Protocol (MCP) server that enables Claude to interact with Disco
 
 ### Step 1: Build the Docker Image
 
-From the discord-mcp directory:
+**Windows PowerShell:**
 
-```bash
+```powershell
 # Navigate to the project directory
-cd C:/Users/WillLyons/Repos/Personal/MCPs/discord-mcp
+cd $env:USERPROFILE/Repos/Personal/MCPs/discord-mcp
 
 # Build the image (use forward slashes on Windows)
 docker build -t discord-mcp .
@@ -58,8 +58,24 @@ docker build -t discord-mcp .
 
 Or with full path:
 
+```powershell
+docker build -t discord-mcp $env:USERPROFILE/Repos/Personal/MCPs/discord-mcp
+```
+
+**Bash/WSL/Git Bash:**
+
 ```bash
-docker build -t discord-mcp C:/Users/WillLyons/Repos/Personal/MCPs/discord-mcp
+# Navigate to the project directory
+cd ~/Repos/Personal/MCPs/discord-mcp
+
+# Build the image
+docker build -t discord-mcp .
+```
+
+Or with full path:
+
+```bash
+docker build -t discord-mcp ~/Repos/Personal/MCPs/discord-mcp
 ```
 
 ### Step 2: Set Discord Token Secret
@@ -81,10 +97,12 @@ docker mcp secret set DISCORD_TOKEN="your-bot-token-here"
 docker mcp secret ls
 ```
 
+Note: These commands work the same on Windows PowerShell, Bash, WSL, and Git Bash.
+
 ### Step 3: Catalog Configuration
 
 The discord-mcp server entry has been automatically added to your custom catalog at:
-`C:\Users\WillLyons\.docker\mcp\catalogs\my-custom-catalog.yaml`
+`$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
 
 **Important:** Verify the catalog entry uses the correct `secrets` format:
 
@@ -316,9 +334,16 @@ const tools = [
 
 4. **Rebuild**:
 
+**Windows PowerShell:**
+
+```powershell
+docker build -t discord-mcp $env:USERPROFILE/Repos/Personal/MCPs/discord-mcp
+```
+
+**Bash/WSL/Git Bash:**
+
 ```bash
-npm run build
-docker build -t discord-mcp .
+docker build -t discord-mcp ~/Repos/Personal/MCPs/discord-mcp
 ```
 
 ## Troubleshooting
@@ -352,7 +377,7 @@ docker build -t discord-mcp .
 ### Tools Not Appearing in Claude
 
 1. Restart Claude Desktop
-2. Check catalog entry exists in `my-custom-catalog.yaml`
+2. Check catalog entry exists in `$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
 3. Verify Docker image built successfully: `docker images discord-mcp`
 4. **Verify catalog uses `secrets` format (not `env`):**
    ```yaml
@@ -362,37 +387,6 @@ docker build -t discord-mcp .
        example: "MTk4NjIyNDgzNTUxNzY4MzI4.ClPSZQ.xxxxx"
    ```
    The `env: DISCORD_TOKEN` mapping is required for the secret to be passed correctly.
-
-### Container Stays Running / Doesn't Exit
-
-If you're testing the container manually and it doesn't exit:
-
-**Expected behavior:**
-- MCP servers are stateless and should only connect to Discord when a tool is called
-- The container will stay alive waiting for stdin, but won't maintain a Discord connection
-- When Claude calls a tool, the server connects to Discord, executes, then disconnects
-
-**Check for old persistent connection code:**
-```bash
-docker logs <container-id>
-```
-
-You should see:
-```
-🚀 MCP server started (stateless mode - connects to Discord on-demand)
-```
-
-NOT:
-```
-✅ Discord bot ready as YourBot#1234  (on startup)
-```
-
-If you see the bot connecting on startup, rebuild the Docker image:
-```bash
-cd C:/Users/WillLyons/Repos/Personal/MCPs/discord-mcp
-npm run build
-docker build -t discord-mcp .
-```
 
 ### Raw Zod Objects in Tool Schemas
 
@@ -405,8 +399,17 @@ If tool schemas show raw Zod objects instead of clean JSON:
 
 **Solution:**
 The server now manually converts Zod schemas to JSON Schema. Rebuild if you see this:
+
+**Windows PowerShell:**
+
+```powershell
+docker build -t discord-mcp $env:USERPROFILE/Repos/Personal/MCPs/discord-mcp
+```
+
+**Bash/WSL/Git Bash:**
+
 ```bash
-npm run build && docker build -t discord-mcp .
+docker build -t discord-mcp ~/Repos/Personal/MCPs/discord-mcp
 ```
 
 ## Technical Details
@@ -459,6 +462,24 @@ Messages are returned as JSON with the following structure:
 
 ### Local Testing
 
+**Windows PowerShell:**
+
+```powershell
+# Install dependencies
+npm install
+
+# Run in development mode
+npm run dev
+
+# Build TypeScript
+npm run build
+
+# Start production build
+npm start
+```
+
+**Bash/WSL/Git Bash:**
+
 ```bash
 # Install dependencies
 npm install
@@ -474,6 +495,14 @@ npm start
 ```
 
 ### Watch Mode
+
+**Windows PowerShell:**
+
+```powershell
+npm run watch
+```
+
+**Bash/WSL/Git Bash:**
 
 ```bash
 npm run watch

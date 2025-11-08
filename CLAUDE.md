@@ -6,19 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This repository contains **MCP_Builder_Instruction_Template.md**, a comprehensive guide for building Model Context Protocol (MCP) servers. MCP servers are tools that extend Claude's capabilities by exposing custom tools and resources through the Model Context Protocol.
 
-## FastMCP Documentation
+## Official MCP Documentation
 
-**ALWAYS reference the official FastMCP documentation** when building MCP servers:
-- **Official Docs**: https://gofastmcp.com
-- **GitHub**: https://github.com/jlowin/fastmcp
-- **PyPI**: https://pypi.org/project/fastmcp/
+**ALWAYS reference the official MCP SDK documentation** when building MCP servers:
+- **MCP SDK Documentation**: https://modelcontextprotocol.io/docs/sdk (covers all implementations including Python, TypeScript, etc.)
+- **FastMCP Documentation**: https://gofastmcp.com (Python-specific framework for rapid development)
 
-The FastMCP documentation is the authoritative source for:
+The MCP SDK documentation is the authoritative source for:
 - Tool parameter handling (no parameter wrapping/unwrapping needed)
 - Supported parameter types and type hints
 - Best practices for tool definitions
-- Context API usage
+- Context API usage and capabilities
 - Return value formatting
+- Protocol compliance and standards across all languages
+
+## Default Language for New MCP Servers
+
+**TypeScript is the preferred language** for new MCP server implementations unless the user's build prompt explicitly requests a different language (Python, Go, etc.). TypeScript provides better type safety and integrates seamlessly with the MCP SDK ecosystem.
 
 ## Critical MCP Implementation Rules
 
@@ -30,7 +34,7 @@ These rules prevent runtime errors and are essential for all MCP server implemen
   - Create client connections when tools are called
   - Destroy connections immediately after tool execution
   - Containers should exit when stdin closes (after handling requests)
-- **Framework Selection** - If user doesn't specify, ask which framework to use (Python/FastMCP, TypeScript/MCP SDK, etc.)
+- **Framework Selection** - Default to **TypeScript/MCP SDK** unless the user's build prompt explicitly requests a different language (Python/FastMCP, Go, etc.)
 
 ### Tool Naming Convention
 - **REQUIRED FORMAT**: `[service_name]_[tool_name]` (all lowercase with underscores)
@@ -94,11 +98,11 @@ async def tool_name(param1: str = "", param2: str = "") -> str:
 
 ## File Organization and Saving Convention
 
-Each MCP server is created in its own subdirectory under `C:\Users\WillLyons\Repos\Personal\MCPs\` following the naming pattern `[service-name]-mcp`.
+Each MCP server is created in its own subdirectory under `$env:USERPROFILE\Repos\Personal\MCPs\` following the naming pattern `[service-name]-mcp`.
 
 Standard MCP server project structure for each subdirectory:
 ```
-C:\Users\WillLyons\Repos\Personal\MCPs\
+$env:USERPROFILE\Repos\Personal\MCPs\
 ├── discord-mcp/                          (TypeScript example)
 │   ├── src/
 │   │   ├── index.ts                      (main server)
@@ -125,7 +129,7 @@ C:\Users\WillLyons\Repos\Personal\MCPs\
 - Main server file: `[service_name]_server.py` (Python) or `[service_name]_*.ts` (TypeScript)
 - Tool files: `[service_name]_[tool_name].ts` or `[service_name]_[tool_name].py` (use underscores)
 - Docker image name: `[service-name]-mcp` (used in `docker build -t [service-name]-mcp .`)
-- Save all files to: `C:\Users\WillLyons\Repos\Personal\MCPs\[service-name]-mcp\`
+- Save all files to: `$env:USERPROFILE\Repos\Personal\MCPs\[service-name]-mcp\`
 
 **Examples:**
 - Directory: `discord-mcp/` (hyphen)
@@ -134,8 +138,8 @@ C:\Users\WillLyons\Repos\Personal\MCPs\
 
 **Automatic post-creation steps:**
 After saving all files, Claude Code will automatically:
-1. Build the Docker image: `docker build -t [service-name]-mcp C:/Users/WillLyons/Repos/Personal/MCPs/[service-name]-mcp`
-2. Add the server entry to: `C:\Users\WillLyons\.docker\mcp\catalogs\my-custom-catalog.yaml`
+1. Build the Docker image: `docker build -t [service-name]-mcp $env:USERPROFILE/Repos/Personal/MCPs/[service-name]-mcp`
+2. Add the server entry to: `$env:USERPROFILE\.docker\mcp\catalogs\my-custom-catalog.yaml`
 3. Provide setup instructions for the user to add any required secrets
 
 **IMPORTANT - Docker Path Syntax:**
@@ -233,7 +237,7 @@ Use emoji prefixes for clarity:
 docker build -t [server-name]-mcp .
 
 # Or with full path (use forward slashes on Windows)
-docker build -t [server-name]-mcp C:/Users/WillLyons/Repos/Personal/MCPs/[service-name]-mcp
+docker build -t [server-name]-mcp $env:USERPROFILE/Repos/Personal/MCPs/[service-name]-mcp
 ```
 
 ### Local Testing
@@ -257,24 +261,156 @@ MCP servers are configured through:
 
 See MCP_Builder_Instruction_Template.md for detailed setup instructions.
 
+## Platform-Specific Command Syntax
+
+**CRITICAL**: Commands must use the correct syntax for your shell environment. Using PowerShell syntax in bash (or vice versa) will cause failures.
+
+### Windows PowerShell (Native Windows)
+
+**Environment Variable Expansion**: Use `$env:USERPROFILE`
+```powershell
+# Correct - PowerShell syntax
+mkdir "$env:USERPROFILE\Repos\Personal\MCPs\test-mcp"
+code "$env:USERPROFILE\.docker\mcp\catalogs\custom.yaml"
+
+# Docker commands use forward slashes
+docker build -t test-mcp $env:USERPROFILE/Repos/Personal/MCPs/test-mcp
+
+# Correct escaping in PowerShell
+$path = "$env:USERPROFILE\Repos\Personal\MCPs"
+```
+
+**❌ WRONG - Bash syntax in PowerShell**
+```powershell
+mkdir ~\Repos\Personal\MCPs\test-mcp  # Will fail
+mkdir $HOME\Repos\Personal\MCPs       # Undefined in PowerShell
+```
+
+### Bash/WSL (Windows Subsystem for Linux or Git Bash)
+
+**Environment Variable Expansion**: Use `~` or `$HOME` (NOT `$env:USERPROFILE`)
+```bash
+# Correct - Bash syntax
+mkdir -p ~/Repos/Personal/MCPs/test-mcp
+nano ~/.docker/mcp/catalogs/custom.yaml
+
+# In WSL, paths can use /mnt/c/Users/...
+mkdir -p /mnt/c/Users/WillLyons/Repos/Personal/MCPs/test-mcp
+
+# Docker commands use forward slashes
+docker build -t test-mcp ~/Repos/Personal/MCPs/test-mcp
+```
+
+**❌ WRONG - PowerShell syntax in Bash**
+```bash
+mkdir "$env:USERPROFILE\Repos\Personal\MCPs"  # Will fail - $env not defined
+mkdir "C:\Users\WillLyons"                     # Backslashes don't work in bash
+```
+
+### Git Bash on Windows
+
+**Environment Variable Expansion**: Use `~` or `$HOME`
+```bash
+# Correct - Git Bash syntax
+mkdir -p ~/Repos/Personal/MCPs/test-mcp
+code ~/.docker/mcp/catalogs/custom.yaml
+
+# Docker commands use forward slashes
+docker build -t test-mcp ~/Repos/Personal/MCPs/test-mcp
+```
+
+### Key Rules for Each Shell
+
+| Shell | Home Variable | Path Separator | Variable Syntax | mkdir | Editor |
+|-------|---------------|----------------|-----------------|-------|--------|
+| **PowerShell** | `$env:USERPROFILE` | `\` or `/` | `$env:VAR` | `mkdir` | `code` |
+| **Bash/WSL** | `~` or `$HOME` | `/` | `$VAR` | `mkdir -p` | `nano` or `code` |
+| **Git Bash** | `~` or `$HOME` | `/` | `$VAR` | `mkdir -p` | `nano` or `code` |
+
+### Docker Commands (Universal)
+
+**Always use forward slashes for Docker, regardless of shell**:
+```powershell
+# PowerShell
+docker build -t name $env:USERPROFILE/Repos/Personal/MCPs/name-mcp
+```
+
+```bash
+# Bash/WSL/Git Bash
+docker build -t name ~/Repos/Personal/MCPs/name-mcp
+```
+
 ## Common Issues and Solutions
 
-| Issue | Solution |
-|-------|----------|
-| "Gateway panic error" | Check docstrings are single-line only |
-| Tools not appearing in Claude | Verify Docker image built, catalog updated, Claude restarted |
-| Type validation errors | Use simple types (str, int) with empty string defaults |
-| Authentication failures | Verify Docker secrets are set and environment variable names match |
-| Timeout issues | Increase timeouts in httpx/subprocess calls |
+| Issue | Solution | Prevention |
+|-------|----------|-----------|
+| "Gateway panic error" | Check docstrings are single-line only | Pre-build verification checklist (see below) |
+| Tools not appearing in Claude | Verify Docker image built, catalog updated, Claude restarted | Validate build steps before deployment |
+| Type validation errors | Use simple types (str, int) with empty string defaults | Use TypeScript strict mode during development |
+| Authentication failures | Verify Docker secrets are set and environment variable names match | Document all required secrets upfront |
+| Timeout issues | Increase timeouts in httpx/subprocess calls | Test locally before Docker build |
+| Docker build fails with "context" errors | Ensure all source files are in project directory | Include proper .gitignore to prevent large files |
+| UID collision in container | Use unique UID (e.g., 9001) instead of common ones | Always use UID > 5000 for custom users |
+| npm package integrity errors | Delete package-lock.json and regenerate | Use `npm install` instead of `npm ci` for fresh installs |
+| TypeScript compilation failures | Check tsconfig.json strict mode settings | Run `npm run build` locally before Docker build |
+| "mkdir not found" or path errors | Verify you're using correct shell syntax for your environment | Check Platform-Specific Command Syntax section above |
+| Variable expansion not working | Ensure `$env:USERPROFILE` in PowerShell, `~` or `$HOME` in Bash | Reference correct syntax for your shell |
+
+## Pre-Build Verification Checklist
+
+Before building any MCP server Docker image, verify:
+
+### TypeScript/Node.js Specific
+- [ ] `tsconfig.json` exists and is properly configured
+- [ ] `package.json` has correct `"build"` script that runs TypeScript compiler
+- [ ] No stale `package-lock.json` (delete if issues arise and let Docker regenerate)
+- [ ] `src/` directory exists with main `index.ts` file
+- [ ] All imports use correct paths (relative paths for local files)
+- [ ] No hardcoded absolute paths in code
+
+### Docker Specific
+- [ ] Dockerfile uses proper multi-stage build: `FROM ... AS builder` then `FROM ... AS production`
+- [ ] Builder stage includes TypeScript compilation (`npm run build`)
+- [ ] Production stage copies only necessary artifacts from builder (`COPY --from=builder`)
+- [ ] User creation UID is unique (use >5000, not 1000 which may already exist)
+- [ ] All COPY commands reference files that exist in project
+- [ ] No circular COPY dependencies
+
+### File Structure
+- [ ] `.gitignore` excludes: `node_modules/`, `build/`, `dist/`, `*.js`, `*.js.map`
+- [ ] All source files are TypeScript (`.ts`), not JavaScript (`.js`)
+- [ ] No build artifacts committed to git
+- [ ] `readme.md` documents all required setup steps
+
+### Configuration
+- [ ] All hardcoded paths use `$env:USERPROFILE` (Windows PowerShell) or `~` (Bash/WSL)
+- [ ] No hardcoded API keys or secrets in code
+- [ ] Tool names follow `[service]_[toolname]` format (all lowercase, underscores)
+- [ ] All tool docstrings are single-line only
+- [ ] Single-line docstrings (multi-line will cause "Gateway panic error")
+
+### Testing Before Docker
+- [ ] Run locally with `npm install && npm run build && npm start` (if possible)
+- [ ] Verify no TypeScript compilation errors
+- [ ] Test at least one tool endpoint with JSON-RPC
+- [ ] Verify tools/list endpoint returns expected structure
+
+### Build Command Verification
+- [ ] Using correct shell syntax for your environment (PowerShell vs Bash)
+- [ ] Docker path uses forward slashes: `docker build -t name $env:USERPROFILE/path`
+- [ ] Image name follows pattern: `[service-name]-mcp` (lowercase with hyphens)
+- [ ] Build completes without warnings about Dockerfile casing
 
 ## When Working on MCP Servers
 
 1. **Review the template** - Reference MCP_Builder_Instruction_Template.md for complete patterns
-2. **Follow the structure** - Use the same Dockerfile, requirements.md, and server.py layout
+2. **Follow the structure** - Use the same Dockerfile, package.json, and src/index.ts layout
 3. **Test docstrings** - Ensure all tool docstrings are exactly one line
-4. **Validate types** - Never use Optional, Union, List, or None defaults
-5. **Check error handling** - Every tool must have try/except with user-friendly messages
-6. **Build and verify** - Always build the Docker image and test locally before deployment
+4. **Validate types** - Use simple types (string, number) with proper defaults
+5. **Check error handling** - Every tool must have try/catch with user-friendly messages
+6. **Use Pre-Build Checklist** - Run through verification checklist before Docker build
+7. **Check Platform Syntax** - Verify you're using correct shell commands for your environment
+8. **Build and verify** - Always build the Docker image and test with JSON-RPC endpoints
 
 ## Version Control and Git Workflow
 
@@ -358,7 +494,7 @@ When creating a new MCP server, include a simplified setup section in the readme
    docker build -t [service-name]-mcp .
 
    # Or with full path (Windows users: use forward slashes)
-   docker build -t [service-name]-mcp C:/Users/WillLyons/Repos/Personal/MCPs/[service-name]-mcp
+   docker build -t [service-name]-mcp $env:USERPROFILE/Repos/Personal/MCPs/[service-name]-mcp
    ```
 
 2. **Explains how to add any required secrets:**
@@ -373,7 +509,7 @@ When creating a new MCP server, include a simplified setup section in the readme
    - How to verify it was set: `docker mcp secret ls`
 
 3. **Notes that catalog is automatic:**
-   State clearly: "The [service-name]-mcp server entry has been automatically added to your custom catalog at `C:\Users\WillLyons\.docker\mcp\catalogs\my-custom-catalog.yaml`"
+   State clearly: "The [service-name]-mcp server entry has been automatically added to your custom catalog at `$env:USERPROFILE\.docker\mcp\catalogs\my-custom-catalog.yaml`"
 
 4. **Restart instruction:**
    Simple final step: "Restart Claude Desktop and the tools will appear"

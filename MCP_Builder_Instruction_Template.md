@@ -51,22 +51,26 @@ If any critical information is missing, ASK THE USER for clarification before pr
 
   
 
-## FASTMCP DOCUMENTATION REFERENCE
+## MCP SDK DOCUMENTATION REFERENCE
 
-**ALWAYS reference the official FastMCP documentation** when building MCP servers:
+**ALWAYS reference the official MCP SDK documentation** when building MCP servers:
 
-- **Official Documentation**: https://gofastmcp.com
-- **GitHub Repository**: https://github.com/jlowin/fastmcp
-- **PyPI Package**: https://pypi.org/project/fastmcp/
+- **MCP SDK Documentation**: https://modelcontextprotocol.io/docs/sdk (covers all implementations including Python, TypeScript, etc.)
+- **FastMCP Documentation**: https://gofastmcp.com (Python-specific framework for rapid development)
 
-The FastMCP documentation is the authoritative source for:
+The MCP SDK documentation is the authoritative source for:
 - Tool parameter handling (parameters are passed directly, no wrapping/unwrapping needed)
 - Supported parameter types and type hints
 - Best practices for tool definitions
 - Context API usage and features
 - Return value formatting
+- Protocol compliance and standards across all languages
 
-**IMPORTANT**: Modern FastMCP (v1.2.0+) does NOT wrap parameters in special objects. Parameters are passed directly as their declared types. NEVER create `unwrap_param()` functions or similar parameter preprocessing.
+**IMPORTANT**: Modern MCP implementations do NOT wrap parameters in special objects. Parameters are passed directly as their declared types. NEVER create `unwrap_param()` functions or similar parameter preprocessing.
+
+## DEFAULT LANGUAGE FOR NEW MCP SERVERS
+
+**TypeScript is the preferred language** for new MCP server implementations unless the user's build prompt explicitly requests a different language (Python, Go, Rust, etc.). TypeScript provides better type safety and integrates seamlessly with the MCP SDK ecosystem.
 
 ## YOUR OUTPUT STRUCTURE
 
@@ -377,7 +381,7 @@ After creating the files above, provide these instructions for the user to run:
 
 ## Step 1: Save the Files
 
-```bash
+```powershell
 
 # Create project directory
 
@@ -385,7 +389,7 @@ mkdir [SERVER_NAME]-mcp-server
 
 cd [SERVER_NAME]-mcp-server
 
-  
+
 
 # Save all 5 files in this directory
 
@@ -395,7 +399,7 @@ cd [SERVER_NAME]-mcp-server
 
 ## Step 2: Build Docker Image
 
-```bash
+```powershell
 
 docker build -t [SERVER_NAME]-mcp-server .
 
@@ -405,13 +409,13 @@ docker build -t [SERVER_NAME]-mcp-server .
 
 ## Step 3: Set Up Secrets (if needed)
 
-```bash
+```powershell
 
 # Only include if the server needs API keys or secrets
 
 docker mcp secret set [SECRET_NAME]="your-secret-value"
 
-  
+
 
 # Verify secrets
 
@@ -423,17 +427,17 @@ docker mcp secret list
 
 ## Step 4: Create Custom Catalog
 
-```bash
+```powershell
 
 # Create catalogs directory if it doesn't exist
 
-mkdir -p ~/.docker/mcp/catalogs
+mkdir -p "$env:USERPROFILE\.docker\mcp\catalogs"
 
-  
+
 
 # Create or edit custom.yaml
 
-nano ~/.docker/mcp/catalogs/custom.yaml
+code "$env:USERPROFILE\.docker\mcp\catalogs\custom.yaml"
 
 ```
 
@@ -513,11 +517,11 @@ registry:
 
 ## Step 5: Update Registry
 
-```bash
+```powershell
 
 # Edit registry file
 
-nano ~/.docker/mcp/registry.yaml
+code "$env:USERPROFILE/.docker/mcp/registry.yaml"
 
 ```
 
@@ -579,7 +583,7 @@ Edit the file and add your custom catalog to the args array:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"-v", "/var/run/docker.sock:/var/run/docker.sock",
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"-v", "[YOUR_HOME]/.docker/mcp:/mcp",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"-v", "$env:USERPROFILE/.docker/mcp:/mcp",
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"docker/mcp-gateway",
 
@@ -613,9 +617,8 @@ Edit the file and add your custom catalog to the args array:
 
 Replace `[YOUR_HOME]` with:
 
+- **Windows**: `$env:USERPROFILE` (PowerShell expands this to your user directory)
 - **macOS**: `/Users/your_username`
-
-- **Windows**: `C:\\Users\\your_username` (use double backslashes)
 
 - **Linux**: `/home/your_username`
 
@@ -633,13 +636,13 @@ Replace `[YOUR_HOME]` with:
 
 ## Step 8: Test Your Server
 
-```bash
+```powershell
 
 # Verify it appears in the list
 
 docker mcp server list
 
-  
+
 
 # If you don't see your server, check logs:
 
@@ -1084,6 +1087,51 @@ Keep implementation plans in the repository as persistent records:
 
 ---
 
+## PLATFORM-SPECIFIC COMMAND SYNTAX FOR USERS
+
+**CRITICAL**: Ensure users run commands with the correct syntax for their shell environment.
+
+### If Using Windows PowerShell (Recommended)
+
+Users should use these commands:
+```powershell
+# Create directory
+mkdir "$env:USERPROFILE\Repos\Personal\MCPs\[service-name]-mcp"
+
+# Edit files
+code "$env:USERPROFILE\.docker\mcp\catalogs\custom.yaml"
+
+# Build Docker image (use forward slashes)
+docker build -t [service-name]-mcp $env:USERPROFILE/Repos/Personal/MCPs/[service-name]-mcp
+```
+
+### If Using Bash/WSL or Git Bash
+
+Users should use these commands:
+```bash
+# Create directory
+mkdir -p ~/Repos/Personal/MCPs/[service-name]-mcp
+
+# Edit files
+code ~/.docker/mcp/catalogs/custom.yaml
+# or
+nano ~/.docker/mcp/catalogs/custom.yaml
+
+# Build Docker image
+docker build -t [service-name]-mcp ~/Repos/Personal/MCPs/[service-name]-mcp
+```
+
+### Common Shell Syntax Errors to Avoid
+
+| Error | Wrong Command | Correct Command |
+|-------|---------------|-----------------|
+| Variable expansion fails | `bash -c "mkdir $env:USERPROFILE\path"` | Use `mkdir "$env:USERPROFILE\path"` in PowerShell OR `mkdir ~/path` in Bash |
+| Path not found | `mkdir ~\Repos\Personal` (in PowerShell) | `mkdir "$env:USERPROFILE\Repos\Personal"` in PowerShell OR `mkdir ~/Repos/Personal` in Bash |
+| Backslash issues | `docker build ... C:\Users\path` | `docker build ... C:/Users/path` or use `$env:USERPROFILE` |
+| mkdir not found | Running bash command in PowerShell | Use `mkdir` in PowerShell, `mkdir -p` in Bash |
+
+---
+
 ## FINAL GENERATION CHECKLIST FOR THE LLM
 
 
@@ -1127,3 +1175,32 @@ Before presenting your response, verify:
 - [ ] Each file appears exactly once
 
 - [ ] Instructions are clear and numbered
+
+## PRE-BUILD VERIFICATION CHECKLIST FOR USERS
+
+Before building the Docker image, users should verify:
+
+### TypeScript/Node.js Files
+- [ ] `tsconfig.json` exists with proper settings
+- [ ] `package.json` has `"build": "tsc"` script
+- [ ] `src/index.ts` or appropriate main file exists
+- [ ] No hardcoded absolute paths in code
+- [ ] All tool docstrings are single-line only
+
+### Docker Configuration
+- [ ] Dockerfile uses multi-stage build (builder → production)
+- [ ] Builder stage compiles TypeScript
+- [ ] Production stage copies artifacts with `COPY --from=builder`
+- [ ] User UID is >5000 (not 1000)
+- [ ] All COPY commands reference files that exist
+
+### File Structure
+- [ ] `.gitignore` excludes `node_modules/`, `build/`, `dist/`, `*.js`
+- [ ] All source files are `.ts` (TypeScript), not `.js`
+- [ ] `readme.md` documents setup
+
+### Before Docker Build
+- [ ] Using correct shell syntax for environment (PowerShell vs Bash)
+- [ ] Docker command uses forward slashes in path
+- [ ] Image name is `[service-name]-mcp` (lowercase, hyphens)
+- [ ] No stale `package-lock.json` (delete if build issues occur)
