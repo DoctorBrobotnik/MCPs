@@ -1,1206 +1,626 @@
+# MCP SERVER GENERATION TEMPLATE
+
+This template guides LLMs in generating complete, working MCP servers for this repository.
+
+---
+
+## BEFORE YOU START
+
+**For all best practices, conventions, and detailed guidance, refer to CLAUDE.md in this repository:**
+- Tool naming conventions
+- Docker requirements and configuration
+- File organization standards
+- Platform-specific command syntax
+- Pre-build verification checklist
+- Common implementation patterns
+- Error handling standards
+- Security best practices
+
+This template focuses on FILE GENERATION. For everything else, use CLAUDE.md as your authoritative reference.
+
+---
+
 ## INITIAL CLARIFICATIONS
 
-Before generating the MCP server, please ask the user to provide:
+Before generating the MCP server, ask the user to provide:
 
 1. **Service/Tool Name**: What service or functionality will this MCP server provide?
-
-2. **API Documentation**: If this integrates with an API, please provide the documentation URL
-
+2. **API Documentation**: If this integrates with an API, provide the documentation URL
 3. **Required Features**: List the specific features/tools you want implemented
-
 4. **Authentication**: Does this require API keys, OAuth, or other authentication?
-
 5. **Data Sources**: Will this access files, databases, APIs, or other data sources?
 
-#### Example User Prompt
-Build an MCP server using a Kali Linux Docker container with security tools like nmap, nikto, sqlmap, wpscan, dirb, and searchsploit installed. Create Python functions wrapped with FastMCP decorators for each tool, sanitizing inputs and returning formatted text results. Run as non-root with proper capabilities set for network tools, and include basic environment variables for configuration.
-
-Create it in a way where I can perform web pentests on servers in my own environment, for educational purposes. 
-
-If any information is missing or unclear, I will ask for clarification before proceeding.
+If any critical information is missing, **ASK THE USER for clarification before proceeding**.
 
 ---
 
-# INSTRUCTIONS FOR THE LLM
+## INSTRUCTIONS FOR THE LLM
 
-  
+### YOUR ROLE
 
-## YOUR ROLE
+You are an expert MCP (Model Context Protocol) server developer. Create a complete, working MCP server based on the user's requirements using this template.
 
-You are an expert MCP (Model Context Protocol) server developer. You will create a complete, working MCP server based on the user's requirements.
+### CLARIFICATION CHECKLIST
 
-  
+Before generating, ensure you have:
+- Service name and clear description
+- API documentation (if external integration)
+- Specific list of tools/functions needed
+- Authentication requirements
+- Any specific output/formatting preferences
 
-## CLARIFICATION PROCESS
+### CRITICAL REFERENCE
 
-Before generating the server, ensure you have:
+**Read CLAUDE.md first for:**
+- CRITICAL RULES FOR CODE GENERATION (tool naming, file naming, docstrings, parameters, etc.)
+- DEFAULT LANGUAGE: TypeScript is preferred unless user specifies otherwise
+- IMPLEMENTATION PATTERNS: Common patterns for tools, API integration, error handling
+- OUTPUT FORMATTING: Emoji usage, response structure
+- DOCKER CONFIGURATION: Base images, user creation, environment variables
+- MCP SDK DOCUMENTATION: https://modelcontextprotocol.io/docs/sdk
 
-1. **Service name and description** - Clear understanding of what the server does
+**Key Points to Remember:**
+- All tool names MUST follow format: `[service_name]_[tool_name]` (lowercase, underscores)
+- SINGLE-LINE docstrings ONLY (multi-line causes gateway panic)
+- ALL parameters default to empty strings: `param: str = ""`
+- All tools return strings (formatted responses)
+- No `@mcp.prompt()` decorators
+- No `prompt` parameter to FastMCP()
+- Use UID >5000 for Docker user (e.g., 9001)
+- STATELESS design only (connect on-demand, close immediately)
 
-2. **API documentation** - If integrating with external services, fetch and review API docs
+### OUTPUT STRUCTURE
 
-3. **Tool requirements** - Specific list of tools/functions needed
+Organize your response in TWO sections:
 
-4. **Authentication needs** - API keys, OAuth tokens, or other auth requirements
+**SECTION 1: FILES TO CREATE**
+- Generate complete file content users can copy and save
+- Include Dockerfile, package.json/requirements.txt, main server file, readme.md
+- Each file appears ONCE with complete content
 
-5. **Output preferences** - Any specific formatting or response requirements
-
-  
-
-If any critical information is missing, ASK THE USER for clarification before proceeding.
-
-  
-
-## MCP SDK DOCUMENTATION REFERENCE
-
-**ALWAYS reference the official MCP SDK documentation** when building MCP servers:
-
-- **MCP SDK Documentation**: https://modelcontextprotocol.io/docs/sdk (covers all implementations including Python, TypeScript, etc.)
-- **FastMCP Documentation**: https://gofastmcp.com (Python-specific framework for rapid development)
-
-The MCP SDK documentation is the authoritative source for:
-- Tool parameter handling (parameters are passed directly, no wrapping/unwrapping needed)
-- Supported parameter types and type hints
-- Best practices for tool definitions
-- Context API usage and features
-- Return value formatting
-- Protocol compliance and standards across all languages
-
-**IMPORTANT**: Modern MCP implementations do NOT wrap parameters in special objects. Parameters are passed directly as their declared types. NEVER create `unwrap_param()` functions or similar parameter preprocessing.
-
-## DEFAULT LANGUAGE FOR NEW MCP SERVERS
-
-**TypeScript is the preferred language** for new MCP server implementations unless the user's build prompt explicitly requests a different language (Python, Go, Rust, etc.). TypeScript provides better type safety and integrates seamlessly with the MCP SDK ecosystem.
-
-## YOUR OUTPUT STRUCTURE
-
-You must organize your response in TWO distinct sections:
-
-
-
-### SECTION 1: FILES TO CREATE
-
-Generate EXACTLY these 5 files with complete content that the user can copy and save.
-
-**DO NOT** create duplicate files or variations. Each file should appear ONCE with its complete content.
-
-
-
-### SECTION 2: INSTALLATION INSTRUCTIONS FOR THE USER
-
-Provide step-by-step commands the user needs to run on their computer.
-
-Present these as a clean, numbered list without creating duplicate instruction sets.
-
-
-
-## CRITICAL RULES FOR CODE GENERATION
-
-1. **TOOL NAMING CONVENTION** - All tools MUST use format `[service_name]_[tool_name]` in all lowercase with underscores
-   - Examples: `discord_send_message`, `github_create_pr`, `slack_post_message`
-   - NOT: `send-message`, `SendMessage`, or `send_message` (missing service prefix)
-
-2. **FILE NAMING CONVENTION** - For TypeScript/modular projects, tool files MUST match tool names
-   - Tool files: `discord_send_message.ts`, `github_create_pr.ts` (underscores)
-   - Main server: `index.ts` or `[service_name]_server.py`
-   - Directory: `[service-name]-mcp` (hyphens for directories)
-
-3. **NO `@mcp.prompt()` decorators** - They break Claude Desktop
-
-4. **NO `prompt` parameter to FastMCP()** - It breaks Claude Desktop
-
-5. **NO type hints from typing module** - No `Optional`, `Union`, `List[str]`, etc.
-
-6. **NO complex parameter types** - Use `param: str = ""` not `param: str = None`
-
-7. **NO parameter unwrapping** - Modern FastMCP passes parameters directly; NEVER create `unwrap_param()` functions
-
-8. **SINGLE-LINE DOCSTRINGS ONLY** - Multi-line docstrings cause gateway panic errors
-
-9. **DEFAULT TO EMPTY STRINGS** - Use `param: str = ""` never `param: str = None`
-
-10. **ALL parameters MUST have default values** - Every parameter needs a default (e.g., `= ""`)
-
-11. **ALWAYS return strings from tools** - All tools must return formatted strings
-
-12. **ALWAYS use Docker** - The server must run in a Docker container
-
-13. **ALWAYS log to stderr** - Use the logging configuration provided
-
-14. **ALWAYS handle errors gracefully** - Return user-friendly error messages
-
-  
+**SECTION 2: INSTALLATION INSTRUCTIONS FOR THE USER**
+- Step-by-step commands for users to run
+- Platform-specific syntax where applicable
+- Clear, numbered list format
 
 ---
-
-  
 
 # SECTION 1: FILES TO CREATE
 
-  
+## For TypeScript Projects (Recommended)
 
-## File 1: Dockerfile
+Use this structure unless user explicitly requests Python.
+
+### File 1: Dockerfile (TypeScript)
 
 ```dockerfile
-
-# Use Python slim image
-
-FROM python:3.11-slim
-
-  
-
-# Set working directory
+# Multi-stage build for TypeScript
+FROM node:18-slim AS builder
 
 WORKDIR /app
 
-  
-
-# Set Python unbuffered mode
-
-ENV PYTHONUNBUFFERED=1
-
-  
-
-# Copy requirements first for better caching
-
-COPY requirements.md .
-
-  
+# Copy package files
+COPY package.json package-lock.json ./
 
 # Install dependencies
+RUN npm ci
 
-RUN pip install --no-cache-dir -r requirements.md
+# Copy source code
+COPY src/ src/
+COPY tsconfig.json .
 
-  
+# Build TypeScript
+RUN npm run build
 
-# Copy the server code
 
-COPY [SERVER_NAME]_server.py .
+# Production stage
+FROM node:18-slim
 
-  
+WORKDIR /app
 
-# Create non-root user
+ENV NODE_ENV=production
 
-RUN useradd -m -u 1000 mcpuser && \
+# Copy only necessary files from builder
+COPY --from=builder /app/dist dist/
+COPY --from=builder /app/node_modules node_modules/
+COPY package.json .
 
-&nbsp;&nbsp;&nbsp;&nbsp;chown -R mcpuser:mcpuser /app
-
-  
-
-# Switch to non-root user
+# Create non-root user with unique UID (>5000 recommended)
+RUN useradd -m -u 9001 mcpuser && \
+    chown -R mcpuser:mcpuser /app
 
 USER mcpuser
 
-  
+CMD ["node", "dist/index.js"]
+```
+
+### File 2: package.json (TypeScript)
+
+```json
+{
+  "name": "[server-name]-mcp",
+  "version": "1.0.0",
+  "description": "[DESCRIPTION]",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
+  }
+}
+```
+
+### File 3: tsconfig.json (TypeScript)
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "lib": ["ES2020"],
+    "moduleResolution": "bundler",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+### File 4: src/index.ts (TypeScript Server)
+
+```typescript
+#!/usr/bin/env node
+
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+
+const server = new Server({
+  name: "[SERVICE_NAME]",
+  version: "1.0.0",
+});
+
+// Define tools - see CLAUDE.md for tool naming and implementation patterns
+const tools = [
+  {
+    name: "[service_name]_example_tool",
+    description: "Single-line description of what this tool does",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        param: {
+          type: "string",
+          description: "Description of the parameter",
+        },
+      },
+      required: [],
+    },
+  },
+];
+
+// Handle tool listing
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: tools,
+}));
+
+// Handle tool execution
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const { name, arguments: args } = request;
+  const param = (args as { param?: string }).param || "";
+
+  if (name === "[service_name]_example_tool") {
+    try {
+      if (!param.trim()) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "❌ Error: param is required",
+            },
+          ],
+        };
+      }
+
+      // Implementation here
+      const result = "success";
+      return {
+        content: [
+          {
+            type: "text",
+            text: `✅ Success: ${result}`,
+          },
+        ],
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `❌ Error: ${message}`,
+          },
+        ],
+      };
+    }
+  }
+
+  return {
+    content: [
+      {
+        type: "text",
+        text: `❌ Unknown tool: ${name}`,
+      },
+    ],
+  };
+});
+
+// Server startup
+async function main() {
+  console.error("[SERVICE_NAME] MCP server starting...");
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error("[SERVICE_NAME] MCP server connected");
+}
+
+main().catch((error) => {
+  console.error("Server error:", error);
+  process.exit(1);
+});
+```
+
+---
+
+## For Python Projects
+
+Use this structure only if user explicitly requests Python.
+
+### File 1: Dockerfile (Python)
+
+```dockerfile
+# Use Python slim image
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Set Python unbuffered mode
+ENV PYTHONUNBUFFERED=1
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the server code
+COPY [SERVER_NAME]_server.py .
+
+# Create non-root user with unique UID (>5000 recommended)
+RUN useradd -m -u 9001 mcpuser && \
+    chown -R mcpuser:mcpuser /app
+
+# Switch to non-root user
+USER mcpuser
 
 # Run the server
-
 CMD ["python", "[SERVER_NAME]_server.py"]
-
 ```
 
-  
-
-## File 2: requirements.md
+### File 2: requirements.txt (Python)
 
 ```
-
 mcp[cli]>=1.2.0
-
 httpx
-
 # Add any other required libraries based on the user's needs
-
 ```
 
-  
-
-## File 3: [SERVER_NAME]_server.py
+### File 3: [SERVER_NAME]_server.py (Python Server)
 
 ```python
-
 #!/usr/bin/env python3
-
 """
+[SERVICE_NAME] MCP Server - [DESCRIPTION]
 
-Simple [SERVICE_NAME] MCP Server - [DESCRIPTION]
-
+For implementation patterns and best practices, see CLAUDE.md
 """
 
 import os
-
 import sys
-
 import logging
-
 from datetime import datetime, timezone
-
 import httpx
-
 from mcp.server.fastmcp import FastMCP
 
-  
-
 # Configure logging to stderr
-
 logging.basicConfig(
-
-&nbsp;&nbsp;&nbsp;&nbsp;level=logging.INFO,
-
-&nbsp;&nbsp;&nbsp;&nbsp;format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-
-&nbsp;&nbsp;&nbsp;&nbsp;stream=sys.stderr
-
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stderr
 )
-
 logger = logging.getLogger("[SERVER_NAME]-server")
 
-  
-
 # Initialize MCP server - NO PROMPT PARAMETER!
-
 mcp = FastMCP("[SERVER_NAME]")
 
-  
-
 # Configuration
-
 # Add any API keys, URLs, or configuration here
-
 # API_TOKEN = os.environ.get("[SERVER_NAME_UPPER]_API_TOKEN", "")
 
-  
-
-# === UTILITY FUNCTIONS ===
-
-# Add utility functions as needed
-
-  
-
 # === MCP TOOLS ===
-
-# Create tools based on user requirements
-
-# Each tool must:
-
+# See CLAUDE.md for tool naming convention: [service_name]_[tool_name]
+# Requirements:
 # - Use @mcp.tool() decorator
-
-# - Have SINGLE-LINE docstrings only
-
+# - SINGLE-LINE docstrings only
 # - Use empty string defaults (param: str = "") NOT None
-
-# - Have simple parameter types
-
-# - Return a formatted string
-
+# - Return formatted strings
 # - Include proper error handling
 
-# WARNING: Multi-line docstrings will cause gateway panic errors!
-
-  
-
 @mcp.tool()
-
 async def service_example_tool(param: str = "") -> str:
+    """Single-line description of what this tool does - MUST BE ONE LINE."""
+    logger.info(f"Executing service_example_tool with {param}")
 
-&nbsp;&nbsp;&nbsp;&nbsp;"""Single-line description of what this tool does - MUST BE ONE LINE."""
-
-&nbsp;&nbsp;&nbsp;&nbsp;logger.info(f"Executing service_example_tool with {param}")
-
-&nbsp;&nbsp;&nbsp;&nbsp;
-
-&nbsp;&nbsp;&nbsp;&nbsp;try:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Implementation here
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result = "example"
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"✅ Success: {result}"
-
-&nbsp;&nbsp;&nbsp;&nbsp;except Exception as e:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logger.error(f"Error: {e}")
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"❌ Error: {str(e)}"
-
-  
+    try:
+        # Implementation here
+        result = "example"
+        return f"✅ Success: {result}"
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return f"❌ Error: {str(e)}"
 
 # === SERVER STARTUP ===
-
 if __name__ == "__main__":
+    logger.info("Starting [SERVICE_NAME] MCP server...")
 
-&nbsp;&nbsp;&nbsp;&nbsp;logger.info("Starting [SERVICE_NAME] MCP server...")
+    # Add any startup checks
+    # if not API_TOKEN:
+    #     logger.warning("[SERVER_NAME_UPPER]_API_TOKEN not set")
 
-&nbsp;&nbsp;&nbsp;&nbsp;
-
-&nbsp;&nbsp;&nbsp;&nbsp;# Add any startup checks
-
-&nbsp;&nbsp;&nbsp;&nbsp;# if not API_TOKEN:
-
-&nbsp;&nbsp;&nbsp;&nbsp;# logger.warning("[SERVER_NAME_UPPER]_API_TOKEN not set")
-
-&nbsp;&nbsp;&nbsp;&nbsp;
-
-&nbsp;&nbsp;&nbsp;&nbsp;try:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mcp.run(transport='stdio')
-
-&nbsp;&nbsp;&nbsp;&nbsp;except Exception as e:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logger.error(f"Server error: {e}", exc_info=True)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sys.exit(1)
-
+    try:
+        mcp.run(transport='stdio')
+    except Exception as e:
+        logger.error(f"Server error: {e}", exc_info=True)
+        sys.exit(1)
 ```
-
-  
-
-## File 4: readme.md
-
-Create a comprehensive readme with all sections filled in based on the implementation.
-
-  
-
-## File 5: CLAUDE.md
-
-Create a CLAUDE.md file with implementation details and guidelines.
-
-  
 
 ---
 
-  
+### File 4: readme.md (Both Python and TypeScript)
+
+**IMPORTANT**: Use the `docs-guide-writer` agent to create the readme.md file.
+
+**DO NOT create a manual readme.md.** Instead:
+
+1. After generating all other files, invoke the docs-guide-writer agent:
+   ```
+   Use the Task tool with subagent_type: "docs-guide-writer"
+   ```
+
+2. Provide the agent with:
+   - MCP server name and description
+   - List of all tools created (name and brief description)
+   - Language used (TypeScript or Python)
+   - Any special features or authentication requirements
+
+3. The agent will generate a comprehensive, well-structured readme.md including:
+   - Service description and purpose
+   - Complete feature list with all tools
+   - Prerequisites and installation steps
+   - Detailed usage examples
+   - Architecture diagram
+   - Development guidelines
+   - Troubleshooting section
+   - Security considerations
+   - License information
+
+**Example prompt for docs-guide-writer:**
+```
+Create a comprehensive README.md for [SERVICE_NAME] MCP server that provides these tools:
+- [tool_name_1]: [description]
+- [tool_name_2]: [description]
+
+Built in TypeScript using the MCP SDK. Include installation steps, usage examples, and troubleshooting.
+```
+
+**Reference**: See CLAUDE.md section "Creating Documentation with docs-guide-writer Agent" for complete guidance.
+
+### File 5: .gitignore
+
+```
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Environment
+.env
+.env.local
+.venv
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+*.js
+*.js.map
+```
+
+---
 
 # SECTION 2: INSTALLATION INSTRUCTIONS FOR THE USER
 
-  
-
-After creating the files above, provide these instructions for the user to run:
-
-  
+After creating the files above, provide these step-by-step instructions:
 
 ## Step 1: Save the Files
 
+**PowerShell (Windows):**
 ```powershell
-
-# Create project directory
-
-mkdir [SERVER_NAME]-mcp-server
-
-cd [SERVER_NAME]-mcp-server
-
-
-
-# Save all 5 files in this directory
-
+mkdir "[SERVER_NAME]-mcp"
+cd "[SERVER_NAME]-mcp"
+# Save all files in this directory
 ```
 
-  
+**Bash/WSL/Git Bash:**
+```bash
+mkdir -p ~/Repos/Personal/MCPs/[server-name]-mcp
+cd ~/Repos/Personal/MCPs/[server-name]-mcp
+# Save all files in this directory
+```
+
+---
 
 ## Step 2: Build Docker Image
 
+**PowerShell (Windows):**
 ```powershell
-
-docker build -t [SERVER_NAME]-mcp-server .
-
+docker build -t [server-name]-mcp .
 ```
 
-  
+**Bash/WSL/Git Bash:**
+```bash
+docker build -t [server-name]-mcp .
+```
+
+### Verify the Build
+
+Check the image was created successfully:
+```powershell
+docker images [server-name]-mcp
+```
+
+You should see your image listed with a recent creation timestamp. If the build failed, check the error output above.
+
+---
 
 ## Step 3: Set Up Secrets (if needed)
 
-```powershell
-
-# Only include if the server needs API keys or secrets
-
-docker mcp secret set [SECRET_NAME]="your-secret-value"
-
-
-
-# Verify secrets
-
-docker mcp secret list
-
-```
-
-  
-
-## Step 4: Create Custom Catalog
+If your server requires API keys or secrets:
 
 ```powershell
-
-# Create catalogs directory if it doesn't exist
-
-mkdir -p "$env:USERPROFILE\.docker\mcp\catalogs"
-
-
-
-# Create or edit custom.yaml
-
-code "$env:USERPROFILE\.docker\mcp\catalogs\custom.yaml"
-
+docker mcp secret set SECRET_NAME="your-secret-value"
 ```
 
-  
+Verify secrets were created:
+```powershell
+docker mcp secret ls
+```
 
-Add this entry to custom.yaml:
+---
+
+## Step 4: Update Custom Catalog
+
+Create or edit the custom catalog file:
+
+**PowerShell (Windows):**
+```powershell
+code "$env:USERPROFILE\.docker\mcp\catalogs\my-custom-catalog.yaml"
+```
+
+**Bash/WSL/Git Bash:**
+```bash
+code ~/.docker/mcp/catalogs/my-custom-catalog.yaml
+```
+
+Add this entry to the catalog (replace placeholders):
 
 ```yaml
-
 version: 2
-
 name: custom
-
 displayName: Custom MCP Servers
-
 registry:
-
-&nbsp;&nbsp;[SERVER_NAME]:
-
-&nbsp;&nbsp;&nbsp;&nbsp;description: "[DESCRIPTION]"
-
-&nbsp;&nbsp;&nbsp;&nbsp;title: "[SERVICE_NAME]"
-
-&nbsp;&nbsp;&nbsp;&nbsp;type: server
-
-&nbsp;&nbsp;&nbsp;&nbsp;dateAdded: "[CURRENT_DATE]" # Format: 2025-01-01T00:00:00Z
-
-&nbsp;&nbsp;&nbsp;&nbsp;image: [SERVER_NAME]-mcp-server:latest
-
-&nbsp;&nbsp;&nbsp;&nbsp;ref: ""
-
-&nbsp;&nbsp;&nbsp;&nbsp;readme: ""
-
-&nbsp;&nbsp;&nbsp;&nbsp;toolsUrl: ""
-
-&nbsp;&nbsp;&nbsp;&nbsp;source: ""
-
-&nbsp;&nbsp;&nbsp;&nbsp;upstream: ""
-
-&nbsp;&nbsp;&nbsp;&nbsp;icon: ""
-
-&nbsp;&nbsp;&nbsp;&nbsp;tools:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- name: [tool_name_1]
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- name: [tool_name_2]
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# List all tools
-
-&nbsp;&nbsp;&nbsp;&nbsp;secrets:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- name: [SECRET_NAME]
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;env: [ENV_VAR_NAME]
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;example: [EXAMPLE_VALUE]
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Only include if using secrets
-
-&nbsp;&nbsp;&nbsp;&nbsp;metadata:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;category: [Choose: productivity|monitoring|automation|integration]
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;tags:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- [relevant_tag_1]
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- [relevant_tag_2]
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;license: MIT
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;owner: local
-
+  [server-name]:
+    title: "[SERVICE_NAME]"
+    description: "[DESCRIPTION]"
+    image: [server-name]-mcp:latest
+    tools:
+      - name: [tool_name_1]
+      - name: [tool_name_2]
+    secrets:
+      - name: [SECRET_NAME]
+        env: [ENV_VAR_NAME]
+        example: "[example-value]"
 ```
 
-  
+**Important**: Only include the `secrets` section if your server requires them.
 
-## Step 5: Update Registry
+---
 
+## Step 5: Restart Claude
+
+1. Quit Claude completely
+2. Start Claude again
+3. Your new tools should appear in the tools list
+
+---
+
+## Step 6: Test Your Server
+
+Verify the server is running:
 ```powershell
-
-# Edit registry file
-
-code "$env:USERPROFILE/.docker/mcp/registry.yaml"
-
-```
-
-  
-
-Add this entry under the existing `registry:` key:
-
-```yaml
-
-registry:
-
-&nbsp;&nbsp;# ... existing servers ...
-
-&nbsp;&nbsp;[SERVER_NAME]:
-
-&nbsp;&nbsp;&nbsp;&nbsp;ref: ""
-
-```
-
-  
-
-**IMPORTANT**: The entry must be under the `registry:` key, not at the root level.
-
-  
-
-## Step 6: Configure Claude Desktop
-
-  
-
-Find your Claude Desktop config file:
-
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-- **Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-  
-
-Edit the file and add your custom catalog to the args array:
-
-```json
-
-{
-
-&nbsp;&nbsp;"mcpServers": {
-
-&nbsp;&nbsp;&nbsp;&nbsp;"mcp-toolkit-gateway": {
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"command": "docker",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"args": [
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"run",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"-i",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"--rm",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"-v", "/var/run/docker.sock:/var/run/docker.sock",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"-v", "$env:USERPROFILE/.docker/mcp:/mcp",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"docker/mcp-gateway",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"--catalog=/mcp/catalogs/docker-mcp.yaml",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"--catalog=/mcp/catalogs/custom.yaml",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"--config=/mcp/config.yaml",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"--registry=/mcp/registry.yaml",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"--tools-config=/mcp/tools.yaml",
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"--transport=stdio"
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;]
-
-&nbsp;&nbsp;&nbsp;&nbsp;}
-
-&nbsp;&nbsp;}
-
-}
-
-```
-
-  
-
-**NOTE**: JSON does not support comments. The custom.yaml catalog line should be added without any comment.
-
-  
-
-Replace `[YOUR_HOME]` with:
-
-- **Windows**: `$env:USERPROFILE` (PowerShell expands this to your user directory)
-- **macOS**: `/Users/your_username`
-
-- **Linux**: `/home/your_username`
-
-  
-
-## Step 7: Restart Claude Desktop
-
-1. Quit Claude Desktop completely
-
-2. Start Claude Desktop again
-
-3. Your new tools should appear!
-
-  
-
-## Step 8: Test Your Server
-
-```powershell
-
-# Verify it appears in the list
-
 docker mcp server list
-
-
-
-# If you don't see your server, check logs:
-
-docker logs [container_name]
-
 ```
 
-  
+If tools don't appear:
+- Check catalog file syntax (YAML must be valid)
+- Verify secrets are set correctly
+- Check Docker build output for errors
+- Restart Claude
 
 ---
 
-  
+## Platform-Specific Syntax Notes
 
-# IMPLEMENTATION PATTERNS FOR THE LLM
+**For all shell-specific syntax and detailed command examples, see CLAUDE.md section "Platform-Specific Command Syntax"**
 
-  
-
-## CORRECT Tool Implementation:
-
-```python
-
-@mcp.tool()
-
-async def service_fetch_data(endpoint: str = "", limit: str = "10") -> str:
-
-&nbsp;&nbsp;&nbsp;&nbsp;"""Fetch data from API endpoint with optional limit."""
-
-&nbsp;&nbsp;&nbsp;&nbsp;# Check for empty strings, not just truthiness
-
-&nbsp;&nbsp;&nbsp;&nbsp;if not endpoint.strip():
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return "❌ Error: Endpoint is required"
-
-&nbsp;&nbsp;&nbsp;&nbsp;
-
-&nbsp;&nbsp;&nbsp;&nbsp;try:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Convert string parameters as needed
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;limit_int = int(limit) if limit.strip() else 10
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Implementation
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"✅ Fetched {limit_int} items"
-
-&nbsp;&nbsp;&nbsp;&nbsp;except ValueError:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"❌ Error: Invalid limit value: {limit}"
-
-&nbsp;&nbsp;&nbsp;&nbsp;except Exception as e:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"❌ Error: {str(e)}"
-
-```
-
-  
-
-## For API Integration:
-
-```python
-
-async with httpx.AsyncClient() as client:
-
-&nbsp;&nbsp;&nbsp;&nbsp;try:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;response = await client.get(url, headers=headers, timeout=10)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;response.raise_for_status()
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data = response.json()
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Process and format data
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"✅ Result: {formatted_data}"
-
-&nbsp;&nbsp;&nbsp;&nbsp;except httpx.HTTPStatusError as e:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"❌ API Error: {e.response.status_code}"
-
-&nbsp;&nbsp;&nbsp;&nbsp;except Exception as e:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"❌ Error: {str(e)}"
-
-```
-
-  
-
-## For System Commands:
-
-```python
-
-import subprocess
-
-try:
-
-&nbsp;&nbsp;&nbsp;&nbsp;result = subprocess.run(
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;command,
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;capture_output=True,
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;text=True,
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;timeout=10,
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;shell=True # Only if needed
-
-&nbsp;&nbsp;&nbsp;&nbsp;)
-
-&nbsp;&nbsp;&nbsp;&nbsp;if result.returncode == 0:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"✅ Output:\n{result.stdout}"
-
-&nbsp;&nbsp;&nbsp;&nbsp;else:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return f"❌ Error:\n{result.stderr}"
-
-except subprocess.TimeoutExpired:
-
-&nbsp;&nbsp;&nbsp;&nbsp;return "⏱️ Command timed out"
-
-```
-
-  
-
-## For File Operations:
-
-```python
-
-try:
-
-&nbsp;&nbsp;&nbsp;&nbsp;with open(filename, 'r') as f:
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;content = f.read()
-
-&nbsp;&nbsp;&nbsp;&nbsp;return f"✅ File content:\n{content}"
-
-except FileNotFoundError:
-
-&nbsp;&nbsp;&nbsp;&nbsp;return f"❌ File not found: {filename}"
-
-except Exception as e:
-
-&nbsp;&nbsp;&nbsp;&nbsp;return f"❌ Error reading file: {str(e)}"
-
-```
-
-  
-
-## OUTPUT FORMATTING GUIDELINES
-
-  
-
-Use emojis for visual clarity:
-
-- ✅ Success operations
-
-- ❌ Errors or failures
-
-- ⏱️ Time-related information
-
-- 📊 Data or statistics
-
-- 🔍 Search or lookup operations
-
-- ⚡ Actions or commands
-
-- 🔒 Security-related information
-
-- 📁 File operations
-
-- 🌐 Network operations
-
-- ⚠️ Warnings
-
-  
-
-Format multi-line output clearly:
-
-```python
-
-return f"""📊 Results:
-
-- Field 1: {value1}
-
-- Field 2: {value2}
-
-- Field 3: {value3}
-
-  
-
-Summary: {summary}"""
-
-```
-
-  
-
-## COMPLETE readme.md TEMPLATE
-
-  
-
-```markdown
-
-# [SERVICE_NAME] MCP Server
-
-  
-
-A Model Context Protocol (MCP) server that [DESCRIPTION].
-
-  
-
-## Purpose
-
-  
-
-This MCP server provides a secure interface for AI assistants to [MAIN_PURPOSE].
-
-  
-
-## Features
-
-  
-
-### Current Implementation
-
-- **`[tool_name_1]`** - [What it does]
-
-- **`[tool_name_2]`** - [What it does]
-
-[LIST ALL TOOLS]
-
-  
-
-## Prerequisites
-
-  
-
-- Docker Desktop with MCP Toolkit enabled
-
-- Docker MCP CLI plugin (`docker mcp` command)
-
-[ADD ANY SERVICE-SPECIFIC REQUIREMENTS]
-
-  
-
-## Installation
-
-  
-
-See the step-by-step instructions provided with the files.
-
-  
-
-## Usage Examples
-
-  
-
-In Claude Desktop, you can ask:
-
-- "[Natural language example 1]"
-
-- "[Natural language example 2]"
-
-[PROVIDE EXAMPLES FOR EACH TOOL]
-
-  
-
-## Architecture
-
-  
-
-```
-
-Claude Desktop → MCP Gateway → [SERVICE_NAME] MCP Server → [SERVICE/API]
-
-↓
-
-Docker Desktop Secrets
-
-([SECRET_NAMES])
-
-```
-
-  
-
-## Development
-
-  
-
-### Local Testing
-
-  
-
-```bash
-
-# Set environment variables for testing
-
-export [SECRET_NAME]="test-value"
-
-  
-
-# Run directly
-
-python [SERVER_NAME]_server.py
-
-  
-
-# Test MCP protocol
-
-echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | python [SERVER_NAME]_server.py
-
-```
-
-  
-
-### Adding New Tools
-
-  
-
-1. Add the function to `[SERVER_NAME]_server.py`
-
-2. Decorate with `@mcp.tool()`
-
-3. Update the catalog entry with the new tool name
-
-4. Rebuild the Docker image
-
-  
-
-## Troubleshooting
-
-  
-
-### Tools Not Appearing
-
-- Verify Docker image built successfully
-
-- Check catalog and registry files
-
-- Ensure Claude Desktop config includes custom catalog
-
-- Restart Claude Desktop
-
-  
-
-### Authentication Errors
-
-- Verify secrets with `docker mcp secret list`
-
-- Ensure secret names match in code and catalog
-
-  
-
-## Security Considerations
-
-  
-
-- All secrets stored in Docker Desktop secrets
-
-- Never hardcode credentials
-
-- Running as non-root user
-
-- Sensitive data never logged
-
-  
-
-## License
-
-  
-
-MIT License
-
-```
-
-  
-
-## VERSION CONTROL AND GIT WORKFLOW
-
-All MCP server development must be version-controlled with Git and hosted on GitHub at `https://github.com/DoctorBrobotnik/MCPs`.
-
-### Git Workflow Requirements
-
-**When implementing new tools or features:**
-
-1. **Create a feature branch** (optional, for larger features):
-   ```bash
-   git checkout -b feature/tool-name
-   ```
-
-2. **Make changes to source files** (src/, utils/, etc.)
-
-3. **Build and test locally**:
-   ```bash
-   npm run build  # TypeScript projects
-   docker build -t [service-name]-mcp .
-   ```
-
-4. **Stage your changes**:
-   ```bash
-   git add .
-   ```
-
-5. **Commit with descriptive message**:
-   ```bash
-   git commit -m "Add [tool_name] tool - Brief description"
-   ```
-
-6. **Push to GitHub**:
-   ```bash
-   git push origin main  # or your feature branch
-   ```
-
-### Commit Message Guidelines
-
-- Use imperative mood: "Add tool" not "Added tool"
-- Be specific: "Add discord_create_thread tool"
-- Include context: "Add discord_create_thread - Create conversation threads with auto-archive"
-- Reference planning documents when implementing planned features
-
-### What NOT to Commit
-
-- `.env` files or credentials (use Docker secrets instead)
-- `node_modules/`, `build/`, `dist/` directories (automatically ignored by .gitignore)
-- IDE configuration files (automatically ignored)
-- Build artifacts and compiled files
-
-### What to Always Commit
-
-- Source code in `src/` directory
-- Configuration files (package.json, tsconfig.json, Dockerfile, etc.)
-- Documentation (README.md, planning documents like TIER1_IMPLEMENTATION_PLAN.md)
-- Test files and examples
-- `.gitignore` file
-
-### Planning Documents in Git
-
-Keep implementation plans in the repository as persistent records:
-- `TIER1_IMPLEMENTATION_PLAN.md` - Detailed specifications for planned tools
-- `FUTURE_TOOLS.md` - Roadmap for future tools
-- Update these as implementation progresses and commit changes
+**Key points:**
+- **Windows PowerShell**: Use `$env:USERPROFILE`, forward slashes in Docker commands
+- **Bash/WSL/Git Bash**: Use `~` or `$HOME`, forward slashes in all paths
 
 ---
 
-## PLATFORM-SPECIFIC COMMAND SYNTAX FOR USERS
+## For More Information
 
-**CRITICAL**: Ensure users run commands with the correct syntax for their shell environment.
-
-### If Using Windows PowerShell (Recommended)
-
-Users should use these commands:
-```powershell
-# Create directory
-mkdir "$env:USERPROFILE\Repos\Personal\MCPs\[service-name]-mcp"
-
-# Edit files
-code "$env:USERPROFILE\.docker\mcp\catalogs\custom.yaml"
-
-# Build Docker image (use forward slashes)
-docker build -t [service-name]-mcp $env:USERPROFILE/Repos/Personal/MCPs/[service-name]-mcp
-```
-
-### If Using Bash/WSL or Git Bash
-
-Users should use these commands:
-```bash
-# Create directory
-mkdir -p ~/Repos/Personal/MCPs/[service-name]-mcp
-
-# Edit files
-code ~/.docker/mcp/catalogs/custom.yaml
-# or
-nano ~/.docker/mcp/catalogs/custom.yaml
-
-# Build Docker image
-docker build -t [service-name]-mcp ~/Repos/Personal/MCPs/[service-name]-mcp
-```
-
-### Common Shell Syntax Errors to Avoid
-
-| Error | Wrong Command | Correct Command |
-|-------|---------------|-----------------|
-| Variable expansion fails | `bash -c "mkdir $env:USERPROFILE\path"` | Use `mkdir "$env:USERPROFILE\path"` in PowerShell OR `mkdir ~/path` in Bash |
-| Path not found | `mkdir ~\Repos\Personal` (in PowerShell) | `mkdir "$env:USERPROFILE\Repos\Personal"` in PowerShell OR `mkdir ~/Repos/Personal` in Bash |
-| Backslash issues | `docker build ... C:\Users\path` | `docker build ... C:/Users/path` or use `$env:USERPROFILE` |
-| mkdir not found | Running bash command in PowerShell | Use `mkdir` in PowerShell, `mkdir -p` in Bash |
-
----
-
-## FINAL GENERATION CHECKLIST FOR THE LLM
-
-
-
-Before presenting your response, verify:
-
-- [ ] Created all 5 files with proper naming
-
-- [ ] No @mcp.prompt() decorators used
-
-- [ ] No prompt parameter in FastMCP()
-
-- [ ] No complex type hints
-
-- [ ] ALL tool docstrings are SINGLE-LINE only
-
-- [ ] ALL parameters default to empty strings ("") not None
-
-- [ ] All tools return strings
-
-- [ ] Check for empty strings with .strip() not just truthiness
-
-- [ ] Error handling in every tool
-
-- [ ] Clear separation between files and user instructions
-
-- [ ] All placeholders replaced with actual values
-
-- [ ] Usage examples provided
-
-- [ ] Security handled via Docker secrets
-
-- [ ] Catalog includes version: 2, name, displayName, and registry wrapper
-
-- [ ] Registry entries are under registry: key with ref: ""
-
-- [ ] Date format is ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)
-
-- [ ] Claude config JSON has no comments
-
-- [ ] Each file appears exactly once
-
-- [ ] Instructions are clear and numbered
-
-## PRE-BUILD VERIFICATION CHECKLIST FOR USERS
-
-Before building the Docker image, users should verify:
-
-### TypeScript/Node.js Files
-- [ ] `tsconfig.json` exists with proper settings
-- [ ] `package.json` has `"build": "tsc"` script
-- [ ] `src/index.ts` or appropriate main file exists
-- [ ] No hardcoded absolute paths in code
-- [ ] All tool docstrings are single-line only
-
-### Docker Configuration
-- [ ] Dockerfile uses multi-stage build (builder → production)
-- [ ] Builder stage compiles TypeScript
-- [ ] Production stage copies artifacts with `COPY --from=builder`
-- [ ] User UID is >5000 (not 1000)
-- [ ] All COPY commands reference files that exist
-
-### File Structure
-- [ ] `.gitignore` excludes `node_modules/`, `build/`, `dist/`, `*.js`
-- [ ] All source files are `.ts` (TypeScript), not `.js`
-- [ ] `readme.md` documents setup
-
-### Before Docker Build
-- [ ] Using correct shell syntax for environment (PowerShell vs Bash)
-- [ ] Docker command uses forward slashes in path
-- [ ] Image name is `[service-name]-mcp` (lowercase, hyphens)
-- [ ] No stale `package-lock.json` (delete if build issues occur)
+Refer to CLAUDE.md for:
+- Pre-build verification checklist
+- Git workflow and version control
+- Common issues and troubleshooting
+- Security best practices
+- Development guidelines
+- Building and testing procedures

@@ -129,9 +129,9 @@ discord-mcp:
 
 **Note:** The `secrets` section with `env: DISCORD_TOKEN` is required for the token to be passed correctly to the container.
 
-### Step 4: Restart Claude Desktop
+### Step 4: Restart Claude
 
-Restart Claude Desktop and the Discord tools will be available.
+Restart Claude and the Discord tools will be available.
 
 ## Usage Examples
 
@@ -376,7 +376,7 @@ docker build -t discord-mcp ~/Repos/Personal/MCPs/discord-mcp
 
 ### Tools Not Appearing in Claude
 
-1. Restart Claude Desktop
+1. Restart Claude
 2. Check catalog entry exists in `$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
 3. Verify Docker image built successfully: `docker images discord-mcp`
 4. **Verify catalog uses `secrets` format (not `env`):**

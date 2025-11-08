@@ -147,6 +147,62 @@ After saving all files, Claude Code will automatically:
 - ✅ Correct: `docker build -t name C:/Users/path/to/dir`
 - ❌ Incorrect: `docker build -t name C:\Users\path\to\dir`
 
+## Creating Documentation with docs-guide-writer Agent
+
+**IMPORTANT**: When creating or updating README.md files for MCP servers, use the `docs-guide-writer` agent to ensure consistent, high-quality documentation.
+
+### How to Use the docs-guide-writer Agent
+
+When you need to create or improve a readme.md for an MCP server:
+
+```
+Use the Task tool with:
+- subagent_type: "docs-guide-writer"
+- Provide the MCP server name, description, tools list, and any existing documentation
+- Ask the agent to generate or improve the README.md
+- The agent will create comprehensive, well-structured documentation
+```
+
+### What the docs-guide-writer Agent Provides
+
+The agent will create documentation that includes:
+- Clear service description and purpose
+- Feature list with all tools
+- Prerequisites and installation steps
+- Usage examples for each tool
+- Architecture diagram
+- Development guidelines
+- Troubleshooting section
+- Security considerations
+- License information
+
+### Example Usage
+
+```
+Task Description: "Create README.md for Discord MCP server"
+
+Prompt: "Create a comprehensive README.md for a Discord MCP server that provides tools for:
+- discord_send_message: Send messages to Discord channels
+- discord_read_messages: Read message history from channels
+- discord_create_thread: Create conversation threads
+
+The server is built in TypeScript using the MCP SDK. Include installation steps, usage examples, and troubleshooting guidance."
+```
+
+### When to Use docs-guide-writer
+
+✅ **Use the agent when:**
+- Creating new MCP server documentation
+- Updating existing readme.md files
+- Need consistent documentation structure
+- Documentation needs to be comprehensive and professional
+- Improving clarity or completeness of existing docs
+
+❌ **Don't use the agent when:**
+- Making minor typo fixes (edit directly)
+- Adding a single line of information
+- Quick README stubs for templates
+
 ## Catalog Configuration for Secrets
 
 **CRITICAL**: When MCP servers require secrets (API keys, tokens, etc.), use the `secrets` format in the catalog YAML, NOT the `env` format:
@@ -257,7 +313,7 @@ echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | python [server_name]_ser
 MCP servers are configured through:
 1. **Docker Desktop Secrets** - For API keys and authentication
 2. **Custom Catalog** - YAML file listing available tools
-3. **Claude Desktop Config** - JSON configuration pointing to the MCP Gateway
+3. **Claude Config** - JSON configuration pointing to the MCP Gateway
 
 See MCP_Builder_Instruction_Template.md for detailed setup instructions.
 
@@ -512,7 +568,7 @@ When creating a new MCP server, include a simplified setup section in the readme
    State clearly: "The [service-name]-mcp server entry has been automatically added to your custom catalog at `$env:USERPROFILE\.docker\mcp\catalogs\my-custom-catalog.yaml`"
 
 4. **Restart instruction:**
-   Simple final step: "Restart Claude Desktop and the tools will appear"
+   Simple final step: "Restart Claude and the tools will appear"
 
 **Example format for secrets section:**
 ```
