@@ -888,7 +888,7 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 
 **CRITICAL: Git workflow is a MANDATORY FINAL STEP for every MCP server implementation. Do NOT skip this step.**
 
-### Complete MCP Development Workflow (with Git)
+### Complete MCP Development Workflow (with Git and Catalog Registration)
 
 **The proper sequence for every MCP server implementation:**
 
@@ -898,12 +898,63 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 4. **Review** - Use code-reviewer agent to verify quality
 5. **Document** - Use docs-guide-writer agent to create README
 6. **Build** - Build Docker image and verify with tests
-7. **Commit to Git** ← **THIS STEP MUST NOT BE SKIPPED**
-8. (Optional) Push to GitHub
+7. **Register in Catalog** ← **MANDATORY BEFORE GIT COMMIT**
+8. **Commit to Git** ← **THIS STEP MUST NOT BE SKIPPED**
+9. (Optional) Push to GitHub
+
+### Catalog Registration for MCP Development
+
+**Every new MCP server MUST be registered in the custom catalog BEFORE committing to git.**
+
+**Location**: `$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
+
+**Required Entry Template:**
+```yaml
+[service-name]-mcp:
+  description: "[Service Name] MCP - [brief description of capabilities with tool count]"
+  title: "[Service Name] MCP Server"
+  type: server
+  dateAdded: "[TODAY'S DATE IN ISO FORMAT - YYYY-MM-DDT00:00:00Z]"
+  image: [service-name]-mcp
+  ref: ""
+  source: local
+  upstream: https://github.com/DoctorBrobotnik/MCPs
+  icon: "[URL to service icon or favicon]"
+  tools:
+    - name: [service_name]_[tool_name_1]
+    - name: [service_name]_[tool_name_2]
+    - name: [service_name]_[tool_name_3]
+  secrets:
+    - name: [SERVICE_API_KEY_OR_TOKEN]
+      env: [SERVICE_API_KEY_OR_TOKEN]
+      example: "example-format-for-documentation"
+  prompts: 0
+```
+
+**Critical Catalog Fields:**
+- **image**: Must match Docker image name exactly (e.g., `suno-mcp` for `docker build -t suno-mcp`)
+- **tools**: List ALL tools provided by the MCP server (keep list synchronized with actual tools)
+- **secrets**: List ALL required API keys, tokens, or credentials (use `secrets` format with `env:` mapping, NOT plain `env:` at top level)
+- **source**: Always set to `local` for servers in this repository
+- **upstream**: Always reference `https://github.com/DoctorBrobotnik/MCPs`
+- **icon**: Use official service icon/favicon URL if available
+
+**Verification Steps After Registration:**
+1. Validate YAML syntax: `cat my-custom-catalog.yaml` (no errors)
+2. Verify image name matches: `docker images | grep [service-name]-mcp`
+3. Ensure all tools are listed in catalog
+4. Confirm all secrets are properly documented with examples
+5. Check date added is today's date in ISO format
+
+**Common Registration Errors:**
+- ❌ Image name doesn't match Docker image name (e.g., catalog says `suno-mcp` but built as `sunoMCP`)
+- ❌ Missing secrets section or using incorrect `env:` format at top level
+- ❌ Tools list doesn't match actual tools in server
+- ❌ Forgotten to update catalog before git commit
 
 ### Git Workflow for MCP Development
 
-**After completing all implementation, testing, and documentation steps:**
+**After completing all implementation, testing, documentation, AND catalog registration:**
 
 1. **Verify git status**:
    ```bash
@@ -965,12 +1016,14 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 - You plan to commit later
 - Changes will be committed together with other work
 - The files aren't "ready"
+- Catalog registration hasn't been done yet
 
 ✅ **ALWAYS** commit immediately after:
 - Code review is complete (and issues are fixed)
 - Docker build succeeds
 - Testing verifies MCP protocol works
 - Documentation is done
+- **Catalog registration is complete** (my-custom-catalog.yaml updated)
 
 ### Commit Message Requirements
 
