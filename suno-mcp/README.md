@@ -84,7 +84,7 @@ Before installing the Suno MCP Server, ensure you have:
 1. **Node.js 18 or higher** (for local development) or **Docker** (for containerized deployment)
 2. **Suno API Key** - Obtain from [https://sunoapi.org/api-key](https://sunoapi.org/api-key)
 3. **Docker Desktop with MCP Gateway** (if using Docker deployment)
-4. **Claude Desktop** or another MCP-compatible client
+4. **Claude Code** or another MCP-compatible client
 
 ---
 
@@ -180,7 +180,7 @@ suno-mcp:
 
 ### Step 4: Restart Claude
 
-After setting the API key and verifying the catalog configuration, restart Claude Desktop for the tools to appear.
+After setting the API key and verifying the catalog configuration, restart Claude for the tools to appear.
 
 ---
 
@@ -1018,7 +1018,7 @@ cat Dockerfile
    ```bash
    docker mcp secret ls
    ```
-4. **Restart Claude Desktop** - Required after changes
+4. **Restart Claude** - Required after changes
 
 ---
 

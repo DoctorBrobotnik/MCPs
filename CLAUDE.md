@@ -979,7 +979,7 @@ docker mcp server enable suno-mcp
    docker mcp secret set SUNO_API_KEY="your-actual-api-key"
    ```
 
-3. Restart Claude Desktop for the tools to appear
+3. Restart Claude for the tools to appear
 
 **Important Notes:**
 - ❌ **Server will NOT appear** in Claude until it's enabled
@@ -1009,7 +1009,7 @@ docker mcp server enable [service-name]-mcp
 ```
 
 ### Step 5: Restart Claude
-Restart Claude Desktop for the tools to appear.
+Restart Claude for the tools to appear.
 ```
 
 ### Git Workflow for MCP Development
