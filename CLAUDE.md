@@ -888,7 +888,7 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 
 **CRITICAL: Git workflow is a MANDATORY FINAL STEP for every MCP server implementation. Do NOT skip this step.**
 
-### Complete MCP Development Workflow (with Git and Catalog Registration)
+### Complete MCP Development Workflow (with Git, Catalog Registration, and Server Enable)
 
 **The proper sequence for every MCP server implementation:**
 
@@ -899,8 +899,9 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 5. **Document** - Use docs-guide-writer agent to create README
 6. **Build** - Build Docker image and verify with tests
 7. **Register in Catalog** ← **MANDATORY BEFORE GIT COMMIT**
-8. **Commit to Git** ← **THIS STEP MUST NOT BE SKIPPED**
-9. (Optional) Push to GitHub
+8. **Enable Server** - Run `docker mcp server enable [service-name]-mcp` ← **MANDATORY FOR USERS**
+9. **Commit to Git** ← **THIS STEP MUST NOT BE SKIPPED**
+10. (Optional) Push to GitHub
 
 ### Catalog Registration for MCP Development
 
@@ -951,6 +952,65 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 - ❌ Missing secrets section or using incorrect `env:` format at top level
 - ❌ Tools list doesn't match actual tools in server
 - ❌ Forgotten to update catalog before git commit
+
+### Enable MCP Server After Catalog Registration
+
+**After registering the MCP server in the catalog, users MUST enable it before it can be used.**
+
+**Command to Enable:**
+```bash
+docker mcp server enable [service-name]-mcp
+```
+
+**Example for Suno MCP:**
+```bash
+docker mcp server enable suno-mcp
+```
+
+**Verification Steps:**
+1. Verify the server is enabled:
+   ```bash
+   docker mcp server ls
+   ```
+   Should show `[service-name]-mcp` in the list with status `enabled`
+
+2. If secrets are required, set them before first use:
+   ```bash
+   docker mcp secret set SUNO_API_KEY="your-actual-api-key"
+   ```
+
+3. Restart Claude Desktop for the tools to appear
+
+**Important Notes:**
+- ❌ **Server will NOT appear** in Claude until it's enabled
+- ❌ **Tools will NOT be available** without the enable command
+- ✅ **Always enable immediately** after catalog registration
+- ✅ **Test the tools** in Claude after enabling to verify they work
+
+**User-Facing Documentation Requirement:**
+Every MCP server README MUST include this final setup step:
+
+```markdown
+## Setup Instructions
+
+### Step 1: Build the Docker Image
+[Build instructions]
+
+### Step 2: Set Required Secrets
+[Secret setup instructions]
+
+### Step 3: Register in Custom Catalog
+The server has been automatically added to your custom catalog.
+
+### Step 4: Enable the Server
+Enable the MCP server to make it available in Claude:
+```bash
+docker mcp server enable [service-name]-mcp
+```
+
+### Step 5: Restart Claude
+Restart Claude Desktop for the tools to appear.
+```
 
 ### Git Workflow for MCP Development
 
@@ -1017,6 +1077,7 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 - Changes will be committed together with other work
 - The files aren't "ready"
 - Catalog registration hasn't been done yet
+- Server enable command hasn't been documented yet
 
 ✅ **ALWAYS** commit immediately after:
 - Code review is complete (and issues are fixed)
@@ -1024,6 +1085,7 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 - Testing verifies MCP protocol works
 - Documentation is done
 - **Catalog registration is complete** (my-custom-catalog.yaml updated)
+- **Server enable documentation is added** to README with `docker mcp server enable [service-name]-mcp` command
 
 ### Commit Message Requirements
 
