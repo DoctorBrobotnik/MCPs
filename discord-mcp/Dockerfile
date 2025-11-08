@@ -19,8 +19,8 @@ RUN npm run build
 # Production stage
 FROM node:20-slim
 
-# Create non-root user
-RUN useradd -m -s /bin/bash mcpuser
+# Create non-root user with explicit UID
+RUN useradd -m -u 9001 -s /bin/bash mcpuser
 
 WORKDIR /app
 
@@ -33,8 +33,7 @@ RUN npm ci --only=production
 # Copy built JavaScript from builder
 COPY --from=builder /app/build ./build
 
-# Set environment variable for unbuffered output
-ENV PYTHONUNBUFFERED=1
+# Set environment variable for production
 ENV NODE_ENV=production
 
 # Switch to non-root user

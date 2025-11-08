@@ -13,11 +13,12 @@ export interface FormattedMessage {
  * Format a Discord message for JSON output
  */
 export function formatMessage(message: Message): FormattedMessage {
+  const channelName = message.channel.isDMBased() ? 'DM' : message.channel.name;
   return {
     author: message.author.tag,
     content: message.content,
     timestamp: message.createdAt.toISOString(),
-    channel: `#${message.channel.isDMBased() ? 'DM' : (message.channel as any).name}`,
+    channel: `#${channelName}`,
     server: message.guild?.name || 'Direct Message',
     messageId: message.id
   };

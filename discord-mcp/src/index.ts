@@ -22,7 +22,7 @@ dotenv.config();
 // Validate Discord token
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 if (!DISCORD_TOKEN) {
-  console.error('Error: DISCORD_TOKEN environment variable is not set');
+  console.error(`[${new Date().toISOString()}] ❌ Error: DISCORD_TOKEN environment variable is not set`);
   process.exit(1);
 }
 
@@ -72,7 +72,7 @@ async function createDiscordClient(): Promise<Client> {
 
     client.once('ready', () => {
       clearTimeout(timeout);
-      console.error(`✅ Discord bot connected as ${client.user?.tag}`);
+      console.error(`[${new Date().toISOString()}] ✅ Discord bot connected as ${client.user?.tag}`);
       resolve();
     });
 
@@ -85,48 +85,61 @@ async function createDiscordClient(): Promise<Client> {
   return client;
 }
 
+/**
+ * Convert a Zod schema to JSON Schema format
+ */
+function zodToJsonSchema(
+  schema: any
+): {
+  properties: Record<string, any>;
+  required: string[];
+} {
+  const shape: Record<string, any> = schema.shape;
+  const properties: Record<string, any> = {};
+  const required: string[] = [];
+
+  // Build proper JSON Schema from Zod schema
+  for (const [key, zodType] of Object.entries(shape)) {
+    const zodDef = (zodType as any)._def;
+
+    // Handle optional fields
+    if (zodDef.typeName === 'ZodOptional') {
+      const innerDef = zodDef.innerType._def;
+      properties[key] = {
+        type: innerDef.typeName === 'ZodNumber' ? 'number' : 'string',
+        description: zodDef.description || innerDef.description || ''
+      };
+    } else if (zodDef.typeName === 'ZodDefault') {
+      // Handle default values
+      const innerDef = zodDef.innerType._def;
+      properties[key] = {
+        type: innerDef.typeName === 'ZodNumber' ? 'number' : 'string',
+        description: zodDef.description || innerDef.description || ''
+      };
+      if (innerDef.checks) {
+        const minCheck = innerDef.checks.find((c: any) => c.kind === 'min');
+        const maxCheck = innerDef.checks.find((c: any) => c.kind === 'max');
+        if (minCheck) properties[key].minimum = minCheck.value;
+        if (maxCheck) properties[key].maximum = maxCheck.value;
+      }
+    } else {
+      // Required field
+      properties[key] = {
+        type: zodDef.typeName === 'ZodNumber' ? 'number' : 'string',
+        description: zodDef.description || ''
+      };
+      required.push(key);
+    }
+  }
+
+  return { properties, required };
+}
+
 // Handle list tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: tools.map(tool => {
-      // Convert Zod schema to JSON Schema manually
-      const shape: Record<string, any> = tool.schema.shape;
-      const properties: Record<string, any> = {};
-      const required: string[] = [];
-
-      // Build proper JSON Schema from Zod schema
-      for (const [key, zodType] of Object.entries(shape)) {
-        const zodDef = (zodType as any)._def;
-
-        // Handle optional fields
-        if (zodDef.typeName === 'ZodOptional') {
-          const innerDef = zodDef.innerType._def;
-          properties[key] = {
-            type: innerDef.typeName === 'ZodNumber' ? 'number' : 'string',
-            description: zodDef.description || innerDef.description || ''
-          };
-        } else if (zodDef.typeName === 'ZodDefault') {
-          // Handle default values
-          const innerDef = zodDef.innerType._def;
-          properties[key] = {
-            type: innerDef.typeName === 'ZodNumber' ? 'number' : 'string',
-            description: zodDef.description || innerDef.description || ''
-          };
-          if (innerDef.checks) {
-            const minCheck = innerDef.checks.find((c: any) => c.kind === 'min');
-            const maxCheck = innerDef.checks.find((c: any) => c.kind === 'max');
-            if (minCheck) properties[key].minimum = minCheck.value;
-            if (maxCheck) properties[key].maximum = maxCheck.value;
-          }
-        } else {
-          // Required field
-          properties[key] = {
-            type: zodDef.typeName === 'ZodNumber' ? 'number' : 'string',
-            description: zodDef.description || ''
-          };
-          required.push(key);
-        }
-      }
+      const { properties, required } = zodToJsonSchema(tool.schema);
 
       return {
         name: tool.name,
@@ -154,7 +167,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     // Create Discord client on-demand
-    console.error(`🔌 Connecting to Discord for ${toolName}...`);
+    console.error(`[${new Date().toISOString()}] 🔌 Connecting to Discord for ${toolName}...`);
     client = await createDiscordClient();
 
     // Execute the tool
@@ -170,7 +183,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     };
   } catch (error: any) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`❌ Error executing ${toolName}:`, errorMessage);
+    console.error(`[${new Date().toISOString()}] ❌ Error executing ${toolName}:`, errorMessage);
     return {
       content: [
         {
@@ -183,7 +196,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   } finally {
     // Always disconnect after the operation
     if (client) {
-      console.error(`🔌 Disconnecting from Discord...`);
+      console.error(`[${new Date().toISOString()}] 🔌 Disconnecting from Discord...`);
       await client.destroy();
     }
   }
@@ -193,10 +206,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('🚀 MCP server started (stateless mode - connects to Discord on-demand)');
+  console.error(`[${new Date().toISOString()}] 🚀 MCP server started (stateless mode - connects to Discord on-demand)`);
 }
 
 main().catch((error) => {
-  console.error('Failed to start MCP server:', error);
+  console.error(`[${new Date().toISOString()}] ❌ Failed to start MCP server:`, error);
   process.exit(1);
 });
