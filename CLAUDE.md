@@ -886,37 +886,120 @@ Provide specific findings, severity level, and recommendations for fixes."
 
 All MCP server development is version-controlled with Git and hosted on GitHub at `https://github.com/DoctorBrobotnik/MCPs`.
 
+**CRITICAL: Git workflow is a MANDATORY FINAL STEP for every MCP server implementation. Do NOT skip this step.**
+
+### Complete MCP Development Workflow (with Git)
+
+**The proper sequence for every MCP server implementation:**
+
+1. **Plan** - Create implementation plan document
+2. **Scaffold** - Create directory structure and configuration
+3. **Code** - Implement all tools and utilities
+4. **Review** - Use code-reviewer agent to verify quality
+5. **Document** - Use docs-guide-writer agent to create README
+6. **Build** - Build Docker image and verify with tests
+7. **Commit to Git** ← **THIS STEP MUST NOT BE SKIPPED**
+8. (Optional) Push to GitHub
+
 ### Git Workflow for MCP Development
 
-**When implementing new tools or features:**
+**After completing all implementation, testing, and documentation steps:**
 
-1. **Create a feature branch** (optional, for larger features):
+1. **Verify git status**:
    ```bash
-   git checkout -b feature/tool-name
+   git status
    ```
+   Should show untracked files in the new `[service-name]-mcp/` directory
 
-2. **Make changes to source files** (src/, utils/, etc.)
-
-3. **Build and test locally**:
+2. **Stage all new files**:
    ```bash
-   npm run build
-   docker build -t [service-name]-mcp .
-   ```
-
-4. **Stage your changes**:
-   ```bash
+   cd [path-to-service-dir]
    git add .
    ```
 
-5. **Commit with descriptive message**:
+3. **Create a comprehensive commit** with descriptive message that includes:
+   - All features implemented (list tools by tier)
+   - Implementation approach (architecture, design patterns)
+   - Key technical decisions (async strategy, validation approach)
+   - Testing status (code review grade, Docker verification)
+   - Any code quality notes
+
+   Example:
    ```bash
-   git commit -m "Add [tool_name] tool - [description]"
+   git commit -m "Implement [service-name] MCP server with [N] tools
+
+   FEATURES:
+   - [Tier 1]: tool1, tool2, tool3
+   - [Tier 2]: tool4, tool5
+   - [Tier 3]: tool6, tool7
+
+   IMPLEMENTATION:
+   - TypeScript with MCP SDK
+   - Polling-based async (no webhooks)
+   - Comprehensive parameter validation
+   - Docker multi-stage build
+
+   TESTING:
+   - Code review: [X/100]
+   - Docker build: ✅ Success
+   - MCP protocol test: ✅ Verified
+
+   Co-Authored-By: Claude <noreply@anthropic.com>"
    ```
 
-6. **Push to GitHub**:
+4. **Verify the commit**:
    ```bash
-   git push origin main  # or your feature branch
+   git log --oneline -5
+   git show --stat HEAD
    ```
+
+5. **Push to GitHub** (when ready):
+   ```bash
+   git push origin main
+   ```
+
+### When NOT to Defer Git Workflow
+
+❌ **NEVER** skip git commits because:
+- Implementation is not "complete enough"
+- You plan to commit later
+- Changes will be committed together with other work
+- The files aren't "ready"
+
+✅ **ALWAYS** commit immediately after:
+- Code review is complete (and issues are fixed)
+- Docker build succeeds
+- Testing verifies MCP protocol works
+- Documentation is done
+
+### Commit Message Requirements
+
+Each commit message must include:
+- **Summary line** (50 chars max): Clear description of what was implemented
+- **Feature list**: Tools by tier with parameter count
+- **Implementation details**: Architecture, patterns, design decisions
+- **Testing status**: Code review score, Docker build status, protocol tests
+- **Co-author line**: `Co-Authored-By: Claude <noreply@anthropic.com>`
+
+### Important Notes
+
+- The `.gitignore` file automatically excludes:
+  - `node_modules/`, `build/`, `dist/` directories
+  - `.env` files and all secrets
+  - IDE files and OS clutter
+  - Compiled JavaScript and map files
+
+- **Never commit**:
+  - `.env` files or credentials
+  - API tokens (use Docker secrets instead)
+  - Build artifacts (automatically ignored)
+  - node_modules (automatically ignored)
+
+- **Always commit**:
+  - Source code (`src/` directory)
+  - Configuration files (package.json, tsconfig.json, Dockerfile)
+  - Documentation (README.md, planning documents)
+  - Test files and examples
 
 ### Commit Message Guidelines
 
