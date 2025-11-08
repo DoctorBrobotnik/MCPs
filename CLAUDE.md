@@ -899,9 +899,10 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 5. **Document** - Use docs-guide-writer agent to create README
 6. **Build** - Build Docker image and verify with tests
 7. **Register in Catalog** ← **MANDATORY BEFORE GIT COMMIT**
-8. **Enable Server** - Run `docker mcp server enable [service-name]-mcp` ← **MANDATORY FOR USERS**
-9. **Commit to Git** ← **THIS STEP MUST NOT BE SKIPPED**
-10. (Optional) Push to GitHub
+8. **Backup Catalog to MCP_Catalogs Repo** ← **MANDATORY - Commit catalog changes to separate repo**
+9. **Enable Server** - Run `docker mcp server enable [service-name]-mcp` ← **MANDATORY FOR USERS**
+10. **Commit to MCPs Git** ← **THIS STEP MUST NOT BE SKIPPED**
+11. (Optional) Push MCPs to GitHub
 
 ### Catalog Registration for MCP Development
 
@@ -952,6 +953,72 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 - ❌ Missing secrets section or using incorrect `env:` format at top level
 - ❌ Tools list doesn't match actual tools in server
 - ❌ Forgotten to update catalog before git commit
+
+### Backup Catalogs to MCP_Catalogs Repository
+
+**CRITICAL: Catalog changes MUST be committed to the MCP_Catalogs repository BEFORE committing to the MCPs repository.**
+
+**Repository:** `https://github.com/DoctorBrobotnik/MCP_Catalogs.git`
+
+**Catalog Files to Backup:**
+- `my-custom-catalog.yaml` - Local MCP servers (Discord, n8n, Suno, etc.)
+- `my-remote-catalog.yaml` - Remote MCP servers (Home Assistant SSE gateway)
+
+**Mandatory Backup Workflow (Step 8 of MCP Development):**
+
+1. **After registering in local catalog**, navigate to catalogs directory:
+   ```bash
+   cd $env:USERPROFILE/.docker/mcp/catalogs
+   ```
+
+2. **Stage the updated catalog file**:
+   ```bash
+   git add my-custom-catalog.yaml
+   ```
+
+3. **Commit with descriptive message**:
+   ```bash
+   git commit -m "Register [service-name]-mcp server - Add [tool_count] tools"
+   ```
+
+4. **Push to MCP_Catalogs repository**:
+   ```bash
+   git push origin main
+   ```
+
+5. **Verify the push succeeded**:
+   ```bash
+   git log --oneline -3
+   ```
+
+**Example: Suno MCP Registration Commit:**
+```bash
+cd $env:USERPROFILE/.docker/mcp/catalogs
+git add my-custom-catalog.yaml
+git commit -m "Register suno-mcp server - Add 10 music generation tools"
+git push origin main
+```
+
+**Recovery Procedure:**
+If you need to restore catalogs from backup:
+```bash
+git clone https://github.com/DoctorBrobotnik/MCP_Catalogs.git
+cp MCP_Catalogs/*.yaml $env:USERPROFILE/.docker/mcp/catalogs/
+```
+
+**Why Catalogs Are Backed Up:**
+- Prevents loss of catalog configuration if local files are corrupted
+- Enables version history of all MCP server registrations
+- Allows recovery if catalog files need to be restored
+- Maintains audit trail of when servers were added/modified
+- Enables easy setup on new machines
+
+**Critical Important Notes:**
+- ⚠️ **MANDATORY STEP** - Do NOT skip catalog backup, even if MCPs repo will be committed anyway
+- ⚠️ **SEPARATE REPOSITORIES** - Catalogs are in MCP_Catalogs repo, MCPs code is in MCPs repo
+- ⚠️ **Do NOT commit catalogs to the MCPs repository** - They're Docker configuration files, not project source code
+- ✅ **ALWAYS backup first** - Commit catalog changes to MCP_Catalogs BEFORE committing to MCPs
+- ✅ **Both repos must be pushed** - Push both MCP_Catalogs and MCPs to GitHub when complete
 
 ### Enable MCP Server After Catalog Registration
 
@@ -1077,6 +1144,7 @@ Restart Claude for the tools to appear.
 - Changes will be committed together with other work
 - The files aren't "ready"
 - Catalog registration hasn't been done yet
+- Catalog changes haven't been backed up to MCP_Catalogs repo yet
 - Server enable command hasn't been documented yet
 
 ✅ **ALWAYS** commit immediately after:
@@ -1085,7 +1153,13 @@ Restart Claude for the tools to appear.
 - Testing verifies MCP protocol works
 - Documentation is done
 - **Catalog registration is complete** (my-custom-catalog.yaml updated)
+- **Catalog backup is complete** (pushed to DoctorBrobotnik/MCP_Catalogs repo)
 - **Server enable documentation is added** to README with `docker mcp server enable [service-name]-mcp` command
+
+**CRITICAL SEQUENCE REMINDER:**
+1. Register in local catalog
+2. Commit & push to MCP_Catalogs repo ← **MUST DO THIS FIRST**
+3. Then commit & push to MCPs repo
 
 ### Commit Message Requirements
 
