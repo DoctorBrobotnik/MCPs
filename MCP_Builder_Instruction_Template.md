@@ -75,7 +75,7 @@ Organize your response in TWO sections:
 
 **SECTION 1: FILES TO CREATE**
 - Generate complete file content users can copy and save
-- Include Dockerfile, package.json/requirements.txt, main server file, readme.md
+- Include Dockerfile, package.json/requirements.txt, main server file, README.md
 - Each file appears ONCE with complete content
 
 **SECTION 2: INSTALLATION INSTRUCTIONS FOR THE USER**
@@ -404,11 +404,11 @@ if __name__ == "__main__":
 
 ---
 
-### File 4: readme.md (Both Python and TypeScript)
+### File 4: README.md (Both Python and TypeScript)
 
-**IMPORTANT**: Use the `docs-guide-writer` agent to create the readme.md file.
+**IMPORTANT**: Use the `docs-guide-writer` agent to create the README.md file.
 
-**DO NOT create a manual readme.md.** Instead:
+**DO NOT create a manual README.md.** Instead:
 
 1. After generating all other files, invoke the docs-guide-writer agent:
    ```
@@ -421,7 +421,7 @@ if __name__ == "__main__":
    - Language used (TypeScript or Python)
    - Any special features or authentication requirements
 
-3. The agent will generate a comprehensive, well-structured readme.md including:
+3. The agent will generate a comprehensive, well-structured README.md including:
    - Service description and purpose
    - Complete feature list with all tools
    - Prerequisites and installation steps

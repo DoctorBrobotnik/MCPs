@@ -249,13 +249,13 @@ $env:USERPROFILE\Repos\Personal\MCPs\
 │   ├── Dockerfile
 │   ├── package.json
 │   ├── tsconfig.json
-│   ├── readme.md
+│   ├── README.md                         (uppercase for GitHub convention)
 │   └── CLAUDE.md (optional)
 ├── slack-mcp/                            (Python example)
 │   ├── slack_server.py                   (main server with underscores)
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   └── readme.md
+│   └── README.md                         (uppercase for GitHub convention)
 └── ...
 ```
 
@@ -264,10 +264,12 @@ $env:USERPROFILE\Repos\Personal\MCPs\
 - Main server file: `[service_name]_server.py` (Python) or `[service_name]_*.ts` (TypeScript)
 - Tool files: `[service_name]_[tool_name].ts` or `[service_name]_[tool_name].py` (use underscores)
 - Docker image name: `[service-name]-mcp` (used in `docker build -t [service-name]-mcp .`)
+- Documentation file: `README.md` (uppercase - standard GitHub convention)
 - Save all files to: `$env:USERPROFILE\Repos\Personal\MCPs\[service-name]-mcp\`
 
 **Examples:**
 - Directory: `discord-mcp/` (hyphen)
+- Documentation: `README.md` (uppercase)
 - Tool files: `discord_send_message.ts`, `discord_read_messages.ts` (underscores)
 - Tool names: `discord_send_message`, `discord_read_messages` (underscores)
 
@@ -288,7 +290,7 @@ After saving all files, Claude Code will automatically:
 
 ### How to Use the docs-guide-writer Agent
 
-When you need to create or improve a readme.md for an MCP server:
+When you need to create or improve a README.md for an MCP server:
 
 ```
 Use the Task tool with:
@@ -328,7 +330,7 @@ The server is built in TypeScript using the MCP SDK. Include installation steps,
 
 ✅ **Use the agent when:**
 - Creating new MCP server documentation
-- Updating existing readme.md files
+- Updating existing README.md files
 - Need consistent documentation structure
 - Documentation needs to be comprehensive and professional
 - Improving clarity or completeness of existing docs
@@ -783,7 +785,7 @@ Before building any MCP server Docker image, verify:
 - [ ] `.gitignore` excludes: `node_modules/`, `build/`, `dist/`, `*.js`, `*.js.map`
 - [ ] All source files are TypeScript (`.ts`), not JavaScript (`.js`)
 - [ ] No build artifacts committed to git
-- [ ] `readme.md` documents all required setup steps
+- [ ] `README.md` documents all required setup steps
 
 ### Configuration
 - [ ] All hardcoded paths use `$env:USERPROFILE` (Windows PowerShell) or `~` (Bash/WSL)
@@ -1340,7 +1342,7 @@ Planning documents serve as persistent records of implementation strategy:
 
 ## Setup Instructions for Users
 
-When creating a new MCP server, include a simplified setup section in the readme that:
+When creating a new MCP server, include a simplified setup section in the README that:
 
 1. **Shows how to build the Docker image:**
    ```bash
