@@ -9,7 +9,9 @@
       "WebFetch(domain:docs.sunoapi.org)",
       "mcp__MCP_DOCKER__browser_navigate",
       "Bash(mkdir:*)",
-      "Bash(docker run:*)"
+      "Bash(docker run:*)",
+      "Bash(docker logs:*)",
+      "mcp__MCP_DOCKER__suno_check_credits"
     ],
     "deny": [],
     "ask": []
