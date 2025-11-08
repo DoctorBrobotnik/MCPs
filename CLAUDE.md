@@ -1079,6 +1079,118 @@ docker mcp server enable [service-name]-mcp
 Restart Claude for the tools to appear.
 ```
 
+### Git Branching Strategy for MCP Development
+
+**Use feature branches for all new MCP server implementations and significant changes.**
+
+**Branching Model:**
+- **main** - Stable, production-ready code. All MCP servers here are tested and deployed.
+- **feature/[service-name]-mcp** - Feature branch for new MCP server implementation
+- **bugfix/[issue-description]** - Bug fix branches for issues in existing servers
+- **docs/[description]** - Documentation-only changes (no code changes)
+
+**Feature Branch Workflow (Recommended for New MCP Servers):**
+
+1. **Create a feature branch** from main:
+   ```bash
+   git checkout -b feature/[service-name]-mcp
+   ```
+
+   Example:
+   ```bash
+   git checkout -b feature/suno-mcp
+   ```
+
+2. **Develop on the feature branch** - All implementation, testing, and documentation happens here
+
+3. **Commit regularly** on the feature branch as you complete each milestone:
+   ```bash
+   git add [files]
+   git commit -m "Add [feature] to [service-name]-mcp"
+   ```
+
+4. **Backup catalog changes to MCP_Catalogs repo** (Step 8 of workflow):
+   ```bash
+   cd $env:USERPROFILE/.docker/mcp/catalogs
+   git add my-custom-catalog.yaml
+   git commit -m "Register [service-name]-mcp server"
+   git push origin main
+   ```
+
+5. **Create a comprehensive final commit** on feature branch summarizing all work:
+   ```bash
+   git commit -m "Complete [service-name] MCP server implementation - [N] tools
+
+   [Detailed message with all changes, testing status, etc.]
+
+   Co-Authored-By: Claude <noreply@anthropic.com>"
+   ```
+
+6. **Push feature branch to GitHub**:
+   ```bash
+   git push origin feature/[service-name]-mcp
+   ```
+
+7. **Create a Pull Request** on GitHub:
+   - Base branch: `main`
+   - Compare branch: `feature/[service-name]-mcp`
+   - Title: `Implement [Service Name] MCP server with [N] tools`
+   - Description: Include feature list, implementation approach, testing status
+
+8. **Merge to main** after review:
+   ```bash
+   # On main branch
+   git checkout main
+   git pull origin main
+   git merge --no-ff feature/[service-name]-mcp
+   git push origin main
+   ```
+
+9. **Delete the feature branch** (cleanup):
+   ```bash
+   git branch -d feature/[service-name]-mcp
+   git push origin --delete feature/[service-name]-mcp
+   ```
+
+**Direct Commit Workflow (For Small Updates):**
+
+If making small updates to existing servers or documentation:
+
+1. **Work directly on main** (for small changes only):
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+2. **Make changes and commit**:
+   ```bash
+   git add [files]
+   git commit -m "[Description of change]"
+   ```
+
+3. **Push to GitHub**:
+   ```bash
+   git push origin main
+   ```
+
+**Branch Naming Conventions:**
+- **New MCP servers**: `feature/[service-name]-mcp` (e.g., `feature/suno-mcp`)
+- **Bug fixes**: `bugfix/[issue-number]-[description]` (e.g., `bugfix/123-fix-polling-timeout`)
+- **Documentation**: `docs/[description]` (e.g., `docs/add-setup-guide`)
+- **Refactoring**: `refactor/[description]` (e.g., `refactor/consolidate-validation`)
+
+**When to Use Branches:**
+- ✅ **Use feature branch** for: New MCP servers, major features, significant refactoring
+- ✅ **Use feature branch** for: Changes that span multiple files or days of work
+- ❌ **No branch needed** for: Small typo fixes, single-line documentation updates
+- ❌ **No branch needed** for: Minor configuration changes to existing servers
+
+**Branch Protection Rules (Recommended):**
+- Require pull request reviews before merge to main
+- Require status checks to pass before merge (if CI/CD is configured)
+- Require branches to be up to date before merge
+- Dismiss stale pull request approvals when new commits are pushed
+
 ### Git Workflow for MCP Development
 
 **After completing all implementation, testing, documentation, AND catalog registration:**
