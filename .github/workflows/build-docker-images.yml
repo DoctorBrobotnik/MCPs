@@ -12,7 +12,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  GITHUB_OWNER: DoctorBrobotnik
+  GITHUB_OWNER: doctorbrobotnik
 
 jobs:
   build-and-push:
