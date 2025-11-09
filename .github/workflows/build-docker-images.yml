@@ -66,3 +66,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.GITHUB_OWNER }}/${{ matrix.image-name }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.GITHUB_OWNER }}/${{ matrix.image-name }}:buildcache,mode=max
+
+      - name: Make package public
+        run: |
+          gh api --method PATCH /user/packages/container/${{ matrix.image-name }}/access -f visibility=public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
