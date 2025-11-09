@@ -4,7 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-This repository contains **MCP_Builder_Instruction_Template.md**, a comprehensive guide for building Model Context Protocol (MCP) servers. MCP servers are tools that extend Claude's capabilities by exposing custom tools and resources through the Model Context Protocol.
+This is a **public repository** that contains Model Context Protocol (MCP) servers. MCP servers are tools that extend Claude's capabilities by exposing custom tools and resources through the Model Context Protocol.
+
+**MCP servers in this repository are built and published automatically via GitHub Actions CI/CD workflow.** When code is pushed to this repository, a GitHub Actions workflow automatically:
+1. Builds Docker images for each MCP server
+2. Pushes images to GitHub Container Registry (GHCR)
+3. Makes images available for immediate use
+
+Users no longer need to build Docker images locally—pre-built images are available from the registry.
 
 ## Official MCP Documentation
 
@@ -273,16 +280,21 @@ $env:USERPROFILE\Repos\Personal\MCPs\
 - Tool files: `discord_send_message.ts`, `discord_read_messages.ts` (underscores)
 - Tool names: `discord_send_message`, `discord_read_messages` (underscores)
 
-**Automatic post-creation steps:**
-After saving all files, Claude Code will automatically:
-1. Build the Docker image: `docker build -t [service-name]-mcp $env:USERPROFILE/Repos/Personal/MCPs/[service-name]-mcp`
-2. Add the server entry to: `$env:USERPROFILE\.docker\mcp\catalogs\my-custom-catalog.yaml`
-3. Provide setup instructions for the user to add any required secrets
+**GitHub Actions CI/CD Workflow:**
+After committing and pushing files to GitHub, the automated workflow will:
+1. Detect new/changed MCP server directories
+2. Build Docker images for each server
+3. Run automated tests and validation
+4. Push images to GitHub Container Registry (GHCR): `ghcr.io/doctorbrobotnik/[service-name]-mcp`
+5. Images are immediately available for use without local building
 
-**IMPORTANT - Docker Path Syntax:**
-- Docker commands require forward slashes (`/`) for paths, even on Windows
-- ✅ Correct: `docker build -t name C:/Users/path/to/dir`
-- ❌ Incorrect: `docker build -t name C:\Users\path\to\dir`
+**User Setup Instructions:**
+Users can now pull pre-built images directly:
+```bash
+docker pull ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
+```
+
+No local Docker builds are required—the repository's GitHub Actions workflow handles all image building and publishing.
 
 ## Creating Documentation with docs-guide-writer Agent
 
@@ -340,14 +352,20 @@ The server is built in TypeScript using the MCP SDK. Include installation steps,
 - Adding a single line of information
 - Quick README stubs for templates
 
-## Catalog Configuration for Secrets
+## Catalog Configuration for Secrets and CI/CD Images
 
-**CRITICAL**: When MCP servers require secrets (API keys, tokens, etc.), use the `secrets` format in the catalog YAML, NOT the `env` format:
+When registering MCP servers in the custom catalog, follow these guidelines:
+
+### For Servers with Secrets (API keys, tokens, etc.)
+
+Use the `secrets` format in catalog YAML:
 
 ```yaml
 [service-name]-mcp:
   title: Service Name MCP Server
-  image: [service-name]-mcp
+  type: server
+  source: remote
+  image: ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
   tools:
     - name: [service]_tool_name
   secrets:
@@ -358,15 +376,24 @@ The server is built in TypeScript using the MCP SDK. Include installation steps,
 ```
 
 **Why this format is required:**
-- The `secrets` section with `env: SECRET_NAME` mapping ensures the Docker Desktop MCP gateway correctly passes the secret value to the container
+- The `secrets` section with `env: SECRET_NAME` mapping ensures the Docker Desktop MCP gateway correctly passes secrets to the container
 - Using plain `env:` at the top level will NOT work for secrets
-- This is the correct pattern used in the discord-mcp server
+- This pattern works consistently with both local and GitHub Actions-built images
 
-**Setting secrets:**
+**Setting secrets locally:**
 ```bash
 docker mcp secret set SECRET_NAME="actual-secret-value"
 docker mcp secret ls  # Verify
 ```
+
+### For Remote GHCR Images
+
+When using images from GitHub Container Registry (built via GitHub Actions):
+
+- **source**: Set to `remote` (not `local`)
+- **image**: Use full GHCR URL: `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
+- Docker automatically pulls these images when enabled
+- Images update automatically when code is pushed to the repository
 
 ## API Integration Patterns
 
@@ -544,16 +571,22 @@ Use emoji prefixes for clarity:
 
 ## Building and Testing
 
-### Build Docker Image
-```bash
-# From within the MCP server directory (using relative path)
-docker build -t [server-name]-mcp .
+### Automated Builds via GitHub Actions
 
-# Or with full path (use forward slashes on Windows)
-docker build -t [server-name]-mcp $env:USERPROFILE/Repos/Personal/MCPs/[service-name]-mcp
-```
+MCP server Docker images are **automatically built and published** via GitHub Actions CI/CD workflow. When you push code to the repository:
 
-### Local Testing
+1. GitHub Actions automatically detects changes to MCP server directories
+2. Builds Docker images for each modified server
+3. Pushes images to GitHub Container Registry (GHCR)
+4. Images become available immediately at: `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
+
+**Benefits of CI/CD:**
+- ✅ Consistent builds in standardized environment
+- ✅ Automated testing before image publication
+- ✅ Users get pre-built images without local Docker
+- ✅ Automatic version management and tagging
+
+### Local Testing (Development Only)
 
 #### TypeScript
 
@@ -884,6 +917,100 @@ Provide specific findings, severity level, and recommendations for fixes."
 8. **Build and verify** - Always build the Docker image and test with JSON-RPC endpoints
 9. **Code Review Required** - Use code-reviewer agent before implementing any new MCP servers
 
+## Continuous Integration with GitHub Actions
+
+This repository uses **GitHub Actions CI/CD** to automatically build and publish Docker images for all MCP servers.
+
+### How It Works
+
+**Workflow Trigger:** When code is pushed to the `main` branch:
+
+1. **Detection** - GitHub Actions detects changes to MCP server directories
+2. **Build** - Automatically builds Docker images for each modified server
+3. **Testing** - Runs automated validation and tests on built images
+4. **Publish** - Pushes images to GitHub Container Registry (GHCR)
+5. **Available** - Images are immediately available at: `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
+
+### GitHub Actions Workflow File
+
+The workflow configuration is located at: `.github/workflows/build-and-publish-mcps.yml`
+
+**Key features:**
+- ✅ Multi-platform builds (Linux x86_64 and ARM64)
+- ✅ Automatic image tagging with commit SHA and `latest`
+- ✅ Push to GitHub Container Registry (GHCR)
+- ✅ Docker image metadata (labels, annotations)
+- ✅ Secrets scanning and validation
+- ✅ Buildx caching for faster builds
+
+### Pulling Pre-Built Images
+
+Users and developers can pull pre-built images directly:
+
+```bash
+# Pull the latest version
+docker pull ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
+
+# Pull a specific version (by commit SHA)
+docker pull ghcr.io/doctorbrobotnik/[service-name]-mcp:abc1234
+```
+
+### Image Registry Authentication
+
+For pulling from GHCR, users may need to authenticate with GitHub:
+
+```bash
+# Login to GitHub Container Registry
+echo ${{ github.token }} | docker login ghcr.io -u $ --password-stdin
+
+# Or use a GitHub Personal Access Token (PAT)
+echo "YOUR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
+```
+
+### Benefits of CI/CD Approach
+
+- **Consistency** - All images built in the same standardized environment
+- **Automation** - No manual Docker build steps required
+- **Testing** - Automated validation before publishing
+- **Distribution** - Images available immediately after push
+- **Versioning** - Automatic image tagging with commit information
+- **User Experience** - Users pull pre-built images, no local builds needed
+- **Updates** - Images automatically updated when code is pushed
+
+### Development Workflow with CI/CD
+
+Developers follow this workflow:
+
+1. **Create/modify MCP server code** in a feature branch
+2. **Test locally** with `npm run build && npm start` (for TypeScript)
+3. **Push to GitHub** when ready
+4. **GitHub Actions automatically:**
+   - Builds the Docker image
+   - Validates the image
+   - Publishes to GHCR
+5. **Users pull the image** from GHCR with `docker pull`
+
+### Troubleshooting CI/CD Builds
+
+**View build logs:**
+1. Go to repository → Actions tab
+2. Click on the workflow run
+3. Check "Build" job logs for details
+
+**Common issues:**
+- **Image build fails** - Check Dockerfile syntax and dependencies in the workflow logs
+- **Push fails** - Verify GHCR authentication and token permissions
+- **Wrong image name** - Ensure Dockerfile exists in correct directory
+
+### Monitoring Workflow Status
+
+Check the status of automated builds:
+- GitHub repository Actions tab shows all workflow runs
+- Status badge in README indicates latest build status
+- Failed workflows trigger GitHub notifications
+
+---
+
 ## Version Control and Git Workflow
 
 All MCP server development is version-controlled with Git and hosted on GitHub at `https://github.com/DoctorBrobotnik/MCPs`.
@@ -899,12 +1026,12 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 3. **Code** - Implement all tools and utilities
 4. **Review** - Use code-reviewer agent to verify quality
 5. **Document** - Use docs-guide-writer agent to create README
-6. **Build** - Build Docker image and verify with tests
+6. **Test Locally** - Run `npm run build && npm start` to verify locally (no Docker build needed)
 7. **Register in Catalog** ← **MANDATORY BEFORE GIT COMMIT**
 8. **Backup Catalog to MCP_Catalogs Repo** ← **MANDATORY - Commit catalog changes to separate repo**
-9. **Enable Server** - Run `docker mcp server enable [service-name]-mcp` ← **MANDATORY FOR USERS**
-10. **Commit to MCPs Git** ← **THIS STEP MUST NOT BE SKIPPED**
-11. (Optional) Push MCPs to GitHub
+9. **Commit to MCPs Git** ← **PUSHES TRIGGER GITHUB ACTIONS BUILD**
+10. **Push to GitHub** ← **GitHub Actions automatically builds and publishes Docker image to GHCR**
+11. **Enable Server** - Users run `docker mcp server enable [service-name]-mcp`
 
 ### Catalog Registration for MCP Development
 
@@ -912,16 +1039,15 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 
 **Location**: `$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
 
-**Required Entry Template:**
+**Required Entry Template (for GitHub Actions-built servers):**
 ```yaml
 [service-name]-mcp:
   description: "[Service Name] MCP - [brief description of capabilities with tool count]"
   title: "[Service Name] MCP Server"
   type: server
   dateAdded: "[TODAY'S DATE IN ISO FORMAT - YYYY-MM-DDT00:00:00Z]"
-  image: [service-name]-mcp
-  ref: ""
-  source: local
+  image: ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
+  source: remote
   upstream: https://github.com/DoctorBrobotnik/MCPs
   icon: "[URL to service icon or favicon]"
   tools:
@@ -936,22 +1062,31 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 ```
 
 **Critical Catalog Fields:**
-- **image**: Must match Docker image name exactly (e.g., `suno-mcp` for `docker build -t suno-mcp`)
+- **image**: Must be the full GHCR URL: `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
+- **source**: Always set to `remote` for GitHub Actions-built servers (not `local`)
 - **tools**: List ALL tools provided by the MCP server (keep list synchronized with actual tools)
-- **secrets**: List ALL required API keys, tokens, or credentials (use `secrets` format with `env:` mapping, NOT plain `env:` at top level)
-- **source**: Always set to `local` for servers in this repository
+- **secrets**: List ALL required API keys, tokens, or credentials (use `secrets` format with `env:` mapping)
 - **upstream**: Always reference `https://github.com/DoctorBrobotnik/MCPs`
 - **icon**: Use official service icon/favicon URL if available
 
 **Verification Steps After Registration:**
 1. Validate YAML syntax: `cat my-custom-catalog.yaml` (no errors)
-2. Verify image name matches: `docker images | grep [service-name]-mcp`
-3. Ensure all tools are listed in catalog
+2. Verify image URL is correct GHCR path: `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
+3. Ensure all tools are listed in catalog and match actual server tools
 4. Confirm all secrets are properly documented with examples
 5. Check date added is today's date in ISO format
+6. Verify `source: remote` is set (not `local`)
+
+**Testing the Catalog Entry:**
+After GitHub Actions builds and publishes the image, test with:
+```bash
+docker pull ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
+docker mcp server enable [service-name]-mcp
+```
 
 **Common Registration Errors:**
-- ❌ Image name doesn't match Docker image name (e.g., catalog says `suno-mcp` but built as `sunoMCP`)
+- ❌ Image URL not in GHCR format: Must be `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
+- ❌ Source set to `local` instead of `remote`: GitHub Actions builds use remote GHCR images
 - ❌ Missing secrets section or using incorrect `env:` format at top level
 - ❌ Tools list doesn't match actual tools in server
 - ❌ Forgotten to update catalog before git commit
@@ -1342,50 +1477,82 @@ Planning documents serve as persistent records of implementation strategy:
 
 ## Setup Instructions for Users
 
-When creating a new MCP server, include a simplified setup section in the README that:
+When creating a new MCP server README, include setup instructions that reflect the GitHub Actions CI/CD workflow:
 
-1. **Shows how to build the Docker image:**
-   ```bash
-   # From the service directory
-   docker build -t [service-name]-mcp .
+### Step 1: Pull the Pre-Built Image
+Users pull the pre-built image from GitHub Container Registry (no local build needed):
 
-   # Or with full path (Windows users: use forward slashes)
-   docker build -t [service-name]-mcp $env:USERPROFILE/Repos/Personal/MCPs/[service-name]-mcp
-   ```
-
-2. **Explains how to add any required secrets:**
-   For each secret the server needs (API keys, tokens, etc.):
-   ```bash
-   docker mcp secret set SECRET_NAME="your-secret-value-here"
-   ```
-
-   Always include:
-   - What the secret is for (e.g., "Discord bot token")
-   - Where to get it (e.g., "from Discord Developer Portal")
-   - How to verify it was set: `docker mcp secret ls`
-
-3. **Notes that catalog is automatic:**
-   State clearly: "The [service-name]-mcp server entry has been automatically added to your custom catalog at `$env:USERPROFILE\.docker\mcp\catalogs\my-custom-catalog.yaml`"
-
-4. **Restart instruction:**
-   Simple final step: "Restart Claude and the tools will appear"
-
-**Example format for secrets section:**
+```bash
+docker pull ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
 ```
-### Step 3: Add Required Secrets
 
-#### Discord Bot Token
-Store your Discord bot token securely:
+### Step 2: Add Required Secrets (if needed)
+For servers that need API keys, tokens, or credentials:
+
+```bash
+docker mcp secret set SECRET_NAME="your-secret-value-here"
+```
+
+Document each secret clearly:
+- What the secret is for (e.g., "Discord bot token")
+- Where to obtain it (e.g., "from Discord Developer Portal")
+- How to verify: `docker mcp secret ls`
+
+**Example for Discord:**
 ```bash
 docker mcp secret set DISCORD_TOKEN="your-bot-token-here"
 ```
-
 Get your token from:
 1. Discord Developer Portal → Applications
 2. Your application → Bot → TOKEN (Copy)
 
-Verify the secret was created:
+### Step 3: Register in Custom Catalog
+The server entry must be added to the custom catalog at:
+`$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
+
+**Example catalog entry:**
+```yaml
+[service-name]-mcp:
+  title: Service Name MCP Server
+  description: "[Brief description of capabilities]"
+  type: server
+  source: remote
+  image: ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
+  tools:
+    - name: [service]_[tool1]
+    - name: [service]_[tool2]
+  secrets:
+    - name: [SECRET_NAME]
+      env: [SECRET_NAME]
+      example: "example-value"
+```
+
+### Step 4: Enable the Server
+Enable the server to make it available in Claude:
+
 ```bash
-docker mcp secret ls
+docker mcp server enable [service-name]-mcp
 ```
+
+### Step 5: Restart Claude
+Restart Claude Desktop for the tools to appear.
+
+---
+
+## Catalog Configuration for CI/CD Images
+
+When registering servers built via GitHub Actions, use the remote GHCR image URL in the catalog:
+
+```yaml
+[service-name]-mcp:
+  title: Service Name MCP Server
+  image: ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
+  source: remote
+  # ... other config
 ```
+
+**Key differences from local builds:**
+- **source**: Set to `remote` (not `local`)
+- **image**: Use full GHCR URL: `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
+- **automatic updates**: Images update when code is pushed to the repository
+- **no local build needed**: Docker pulls the pre-built image directly

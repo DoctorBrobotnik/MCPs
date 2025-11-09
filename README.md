@@ -8,6 +8,17 @@ Model Context Protocol (MCP) servers are containerized tools that extend Claude'
 
 MCP servers run in Docker containers and communicate with Claude through the MCP Gateway, making them secure, isolated, and easy to manage.
 
+## How This Repository Works
+
+This is a **public repository** with **automated CI/CD builds**:
+
+- **Developers** commit code to GitHub
+- **GitHub Actions** automatically builds Docker images
+- **Images are published** to GitHub Container Registry (GHCR)
+- **Users pull** pre-built images (no local builds needed)
+
+See [GITHUB_ACTIONS_WORKFLOW.md](GITHUB_ACTIONS_WORKFLOW.md) for detailed information about the CI/CD pipeline.
+
 ## Available Servers
 
 ### Discord MCP Server
@@ -143,13 +154,10 @@ Each server has its own installation guide. Start with one:
 
 All MCP servers follow this pattern:
 
-1. **Build the Docker image**
+1. **Pull the pre-built Docker image**
    ```bash
-   # Navigate to the server directory
-   cd <server-name>-mcp
-
-   # Build (Windows PowerShell - use forward slashes)
-   docker build -t <server-name>-mcp .
+   # Pull from GitHub Container Registry (GHCR)
+   docker pull ghcr.io/doctorbrobotnik/<server-name>-mcp:latest
    ```
 
 2. **Set required secrets**
@@ -161,7 +169,12 @@ All MCP servers follow this pattern:
    docker mcp secret ls
    ```
 
-3. **Enable the server**
+3. **Register in custom catalog**
+   - Edit `~/.docker/mcp/catalogs/my-custom-catalog.yaml`
+   - Add server entry with image: `ghcr.io/doctorbrobotnik/<server-name>-mcp:latest`
+   - See server-specific guide for catalog format
+
+4. **Enable the server**
    ```bash
    # Enable the MCP server for use in Claude
    docker mcp server enable <server-name>-mcp
@@ -170,7 +183,7 @@ All MCP servers follow this pattern:
    docker mcp server ls
    ```
 
-4. **Restart Claude**
+5. **Restart Claude**
    - Close and reopen Claude Desktop
    - Tools from the enabled server will now appear
 
@@ -186,10 +199,9 @@ All MCP servers follow this pattern:
    - Navigate to Bot section and copy the bot token
    - Enable "Message Content Intent" under Privileged Gateway Intents
 
-2. **Build Docker Image**
+2. **Pull Pre-Built Docker Image**
    ```bash
-   cd discord-mcp
-   docker build -t discord-mcp .
+   docker pull ghcr.io/doctorbrobotnik/discord-mcp:latest
    ```
 
 3. **Set Discord Token**
@@ -197,12 +209,16 @@ All MCP servers follow this pattern:
    docker mcp secret set DISCORD_TOKEN="your-bot-token-here"
    ```
 
-4. **Enable the Server**
+4. **Register in Catalog**
+   - Edit `~/.docker/mcp/catalogs/my-custom-catalog.yaml`
+   - Add Discord server entry with image: `ghcr.io/doctorbrobotnik/discord-mcp:latest`
+
+5. **Enable the Server**
    ```bash
    docker mcp server enable discord-mcp
    ```
 
-5. **Restart Claude**
+6. **Restart Claude**
 
 **Full details:** [discord-mcp/README.md](discord-mcp/README.md)
 
@@ -215,10 +231,9 @@ All MCP servers follow this pattern:
    - Create account and generate API key
    - Key format: `sk_xxxxxxxxxxxxx`
 
-2. **Build Docker Image**
+2. **Pull Pre-Built Docker Image**
    ```bash
-   cd suno-mcp
-   docker build -t suno-mcp .
+   docker pull ghcr.io/doctorbrobotnik/suno-mcp:latest
    ```
 
 3. **Set API Key**
@@ -226,12 +241,16 @@ All MCP servers follow this pattern:
    docker mcp secret set SUNO_API_KEY="sk_your_api_key_here"
    ```
 
-4. **Enable the Server**
+4. **Register in Catalog**
+   - Edit `~/.docker/mcp/catalogs/my-custom-catalog.yaml`
+   - Add Suno server entry with image: `ghcr.io/doctorbrobotnik/suno-mcp:latest`
+
+5. **Enable the Server**
    ```bash
    docker mcp server enable suno-mcp
    ```
 
-5. **Restart Claude**
+6. **Restart Claude**
 
 **Full details:** [suno-mcp/README.md](suno-mcp/README.md)
 
@@ -322,17 +341,19 @@ docker mcp server logs <server-name>-mcp
 docker mcp server logs -f <server-name>-mcp
 ```
 
-### Rebuild After Updates
+### Update to Latest Version
 
 ```bash
-# Navigate to server directory
-cd <server-name>-mcp
+# Pull the latest image from GHCR
+docker pull ghcr.io/doctorbrobotnik/<server-name>-mcp:latest
 
-# Rebuild the image
-docker build -t <server-name>-mcp .
+# Restart the server
+docker mcp server restart <server-name>-mcp
 
 # Restart Claude to use the updated version
 ```
+
+**Note:** The images are automatically built and published when code is pushed to the repository, so new versions are available immediately after updates.
 
 ---
 
@@ -343,9 +364,9 @@ docker build -t <server-name>-mcp .
 **Symptoms:** MCP tools don't show up after installation
 
 **Solutions:**
-1. Verify Docker image built successfully:
+1. Verify the image was pulled successfully:
    ```bash
-   docker images | grep <server-name>-mcp
+   docker images | grep ghcr.io/doctorbrobotnik/<server-name>-mcp
    ```
 
 2. Check server is enabled:
@@ -354,14 +375,20 @@ docker build -t <server-name>-mcp .
    ```
    Server should show `enabled` status
 
-3. Verify secrets are set:
+3. Verify catalog entry has correct image URL:
+   ```bash
+   cat ~/.docker/mcp/catalogs/my-custom-catalog.yaml
+   ```
+   Should show: `image: ghcr.io/doctorbrobotnik/<server-name>-mcp:latest`
+
+4. Verify secrets are set (if required):
    ```bash
    docker mcp secret ls
    ```
 
-4. **Restart Claude** (required after any changes)
+5. **Restart Claude** (required after any changes)
 
-5. Check catalog configuration exists:
+6. Check catalog configuration exists:
    - Windows: `%USERPROFILE%\.docker\mcp\catalogs\my-custom-catalog.yaml`
    - Mac/Linux: `~/.docker/mcp/catalogs/my-custom-catalog.yaml`
 
@@ -385,9 +412,9 @@ docker mcp server restart <server-name>-mcp
 
 ---
 
-### Docker Build Failures
+### Image Pull Failures
 
-**Symptoms:** Errors during `docker build` command
+**Symptoms:** Error when running `docker pull ghcr.io/doctorbrobotnik/<server-name>-mcp:latest`
 
 **Solutions:**
 
@@ -396,26 +423,23 @@ docker mcp server restart <server-name>-mcp
    docker --version
    ```
 
-2. **Verify path syntax (Windows users):**
-   - Use forward slashes: `docker build -t name C:/Users/path`
-   - NOT backslashes: `C:\Users\path` (will fail)
+2. **Verify internet connection:**
+   - GitHub Container Registry requires internet access
+   - Check your network connection
 
-3. **Check for file permission issues:**
+3. **Check if image exists:**
+   - Images are automatically built when code is pushed to GitHub
+   - Check [GitHub Actions tab](https://github.com/DoctorBrobotnik/MCPs/actions) for build status
+   - Wait for build to complete before pulling
+
+4. **Try pulling again with verbose output:**
    ```bash
-   # Windows: Run PowerShell as Administrator
-   # Mac/Linux: Check file ownership
+   docker pull --verbose ghcr.io/doctorbrobotnik/<server-name>-mcp:latest
    ```
 
-4. **Clear Docker build cache:**
-   ```bash
-   docker builder prune
-   docker build --no-cache -t <server-name>-mcp .
-   ```
-
-5. **Review build output for specific errors:**
-   - Missing dependencies (run `npm install` in server directory)
-   - TypeScript compilation errors (check `tsconfig.json`)
-   - File not found errors (ensure all files are present)
+5. **Check authentication (for private images):**
+   - Most images are public and don't require authentication
+   - If you see "401 Unauthorized", you may need to authenticate to GHCR
 
 ---
 
@@ -577,8 +601,11 @@ See [MCP_Builder_Instruction_Template.md](MCP_Builder_Instruction_Template.md) f
 2. Create a feature branch: `git checkout -b feature/your-server-name-mcp`
 3. Implement your MCP server following the template
 4. Add comprehensive documentation (README.md)
-5. Test thoroughly with Docker build and Claude integration
-6. Submit pull request with description of functionality
+5. Test locally with `npm run build && npm start` (TypeScript) or `python [server]_server.py` (Python)
+6. Commit and push to your branch
+7. Submit pull request with description of functionality
+8. GitHub Actions will automatically build your image (no manual Docker build needed)
+9. Once merged, images are automatically published to GHCR
 
 ### Reporting Issues
 
@@ -633,15 +660,16 @@ Currently, MCP servers run locally on the same machine as Claude Desktop. Remote
 ### How do I update to the latest version?
 
 ```bash
-# Pull latest changes
-git pull origin main
+# Pull the latest image from GHCR
+docker pull ghcr.io/doctorbrobotnik/<server-name>-mcp:latest
 
-# Rebuild the server
-cd <server-name>-mcp
-docker build -t <server-name>-mcp .
+# Restart the server
+docker mcp server restart <server-name>-mcp
 
 # Restart Claude
 ```
+
+The images are automatically built and published when code is pushed to the repository, so you always get the latest version when you pull.
 
 ---
 

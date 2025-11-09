@@ -486,6 +486,23 @@ Thumbs.db
 
 # SECTION 2: INSTALLATION INSTRUCTIONS FOR THE USER
 
+## Important: GitHub Actions Builds Docker Images Automatically
+
+This repository uses **GitHub Actions CI/CD** to automatically build and publish Docker images. Here's the workflow:
+
+1. **You create the MCP server code** (TypeScript/Python files, Dockerfile, etc.)
+2. **You commit and push to GitHub**
+3. **GitHub Actions automatically:**
+   - Detects your new/modified server directory
+   - Builds the Docker image
+   - Publishes to GitHub Container Registry (GHCR)
+   - Makes it available immediately
+4. **Users pull the pre-built image** from GHCR (no local builds needed)
+
+**You do NOT need to build Docker images locally.** Just write the code, push to GitHub, and GitHub Actions handles the rest.
+
+---
+
 After creating the files above, provide these step-by-step instructions:
 
 ## Step 1: Save the Files
@@ -506,47 +523,50 @@ cd ~/Repos/Personal/MCPs/[server-name]-mcp
 
 ---
 
-## Step 2: Build Docker Image
+## Step 2: Test Locally (Optional)
 
-**PowerShell (Windows):**
-```powershell
-docker build -t [server-name]-mcp .
-```
+Before committing to GitHub, test the server locally:
 
-**Bash/WSL/Git Bash:**
+**For TypeScript:**
 ```bash
-docker build -t [server-name]-mcp .
+npm install
+npm run build
+npm start
 ```
 
-### Verify the Build
-
-Check the image was created successfully:
-```powershell
-docker images [server-name]-mcp
+**For Python:**
+```bash
+pip install -r requirements.txt
+python [server_name]_server.py
 ```
 
-You should see your image listed with a recent creation timestamp. If the build failed, check the error output above.
+You can also test the MCP protocol locally by piping JSON to the server, but this is optional since GitHub Actions will build the Docker image automatically.
 
 ---
 
-## Step 3: Set Up Secrets (if needed)
+## Step 3: Commit to GitHub
 
-If your server requires API keys or secrets:
+The code is now ready to be committed and pushed to GitHub. GitHub Actions will automatically:
+1. Detect your new/modified MCP server directory
+2. Build the Docker image
+3. Publish it to GitHub Container Registry (GHCR)
+4. Make it available at: `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
 
-```powershell
-docker mcp secret set SECRET_NAME="your-secret-value"
+**Commit and push:**
+```bash
+cd [path-to-mcps-repo]
+git add .
+git commit -m "Add [service-name] MCP server with [N] tools"
+git push origin main
 ```
 
-Verify secrets were created:
-```powershell
-docker mcp secret ls
-```
+Monitor the build in GitHub Actions tab → Check workflow status.
 
 ---
 
-## Step 4: Update Custom Catalog
+## Step 4: Register in Custom Catalog (After GitHub Actions Build)
 
-Create or edit the custom catalog file:
+Once GitHub Actions successfully builds and publishes your image to GHCR, update the custom catalog file:
 
 **PowerShell (Windows):**
 ```powershell
@@ -561,28 +581,54 @@ code ~/.docker/mcp/catalogs/my-custom-catalog.yaml
 Add this entry to the catalog (replace placeholders):
 
 ```yaml
-version: 2
-name: custom
-displayName: Custom MCP Servers
-registry:
-  [server-name]:
-    title: "[SERVICE_NAME]"
-    description: "[DESCRIPTION]"
-    image: [server-name]-mcp:latest
-    tools:
-      - name: [tool_name_1]
-      - name: [tool_name_2]
-    secrets:
-      - name: [SECRET_NAME]
-        env: [ENV_VAR_NAME]
-        example: "[example-value]"
+[server-name]-mcp:
+  title: "[SERVICE_NAME]"
+  description: "[DESCRIPTION] - [N] tools"
+  type: server
+  source: remote
+  image: ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
+  tools:
+    - name: [tool_name_1]
+    - name: [tool_name_2]
+  secrets:
+    - name: [SECRET_NAME]
+      env: [ENV_VAR_NAME]
+      example: "[example-value]"
 ```
 
-**Important**: Only include the `secrets` section if your server requires them.
+**Key fields for GitHub Actions-built servers:**
+- **source**: Set to `remote` (not `local`)
+- **image**: Use full GHCR URL: `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
+- **secrets**: Only include if your server requires them
 
 ---
 
-## Step 5: Restart Claude
+## Step 5: Set Up Secrets (if needed)
+
+If your server requires API keys or tokens:
+
+```bash
+docker mcp secret set SECRET_NAME="your-secret-value"
+```
+
+Verify secrets were created:
+```bash
+docker mcp secret ls
+```
+
+---
+
+## Step 6: Enable the Server
+
+Enable the MCP server to make it available in Claude:
+
+```bash
+docker mcp server enable [service-name]-mcp
+```
+
+---
+
+## Step 7: Restart Claude
 
 1. Quit Claude completely
 2. Start Claude again
@@ -590,17 +636,19 @@ registry:
 
 ---
 
-## Step 6: Test Your Server
+## Step 8: Test Your Server
 
 Verify the server is running:
-```powershell
-docker mcp server list
+```bash
+docker mcp server ls
 ```
 
 If tools don't appear:
-- Check catalog file syntax (YAML must be valid)
+- Check GitHub Actions build succeeded (green checkmark in Actions tab)
+- Verify catalog file syntax (YAML must be valid)
+- Verify image URL is correct: `ghcr.io/doctorbrobotnik/[service-name]-mcp:latest`
+- Verify `source: remote` is set in catalog
 - Verify secrets are set correctly
-- Check Docker build output for errors
 - Restart Claude
 
 ---
@@ -617,10 +665,17 @@ If tools don't appear:
 
 ## For More Information
 
-Refer to CLAUDE.md for:
+**CLAUDE.md** - Complete reference guide:
 - Pre-build verification checklist
 - Git workflow and version control
 - Common issues and troubleshooting
 - Security best practices
 - Development guidelines
-- Building and testing procedures
+- Continuous Integration with GitHub Actions
+
+**GITHUB_ACTIONS_WORKFLOW.md** - Detailed CI/CD documentation:
+- How the workflow builds and publishes images
+- Multi-platform builds (x86_64 and ARM64)
+- Monitoring and troubleshooting builds
+- Image registry and pulling images
+- Build performance and caching
