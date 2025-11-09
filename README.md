@@ -15,9 +15,10 @@ This is a **public repository** with **automated CI/CD builds**:
 - **Developers** commit code to GitHub
 - **GitHub Actions** automatically builds Docker images
 - **Images are published** to GitHub Container Registry (GHCR)
-- **Users pull** pre-built images (no local builds needed)
+- **Images are automatically set to public visibility** - no authentication required
+- **Users pull** pre-built images directly (no local builds, no GitHub login needed)
 
-See [GITHUB_ACTIONS_WORKFLOW.md](GITHUB_ACTIONS_WORKFLOW.md) for detailed information about the CI/CD pipeline.
+**Key Benefit:** All images are automatically made public after successful builds, so users can immediately pull and use them without any GitHub authentication.
 
 ## Available Servers
 
@@ -131,6 +132,8 @@ docker --version
 # Expected output: Docker version 4.34.0 or later
 ```
 
+**Note:** No GitHub authentication is required to pull images - all images are automatically public.
+
 ### Step 2: Clone or Download This Repository
 
 **Option A: Clone with Git**
@@ -156,9 +159,11 @@ All MCP servers follow this pattern:
 
 1. **Pull the pre-built Docker image**
    ```bash
-   # Pull from GitHub Container Registry (GHCR)
+   # Pull from GitHub Container Registry (GHCR) - no authentication required
    docker pull ghcr.io/doctorbrobotnik/<server-name>-mcp:latest
    ```
+
+   **Note:** Images are automatically public - no GitHub login or credentials needed.
 
 2. **Set required secrets**
    ```bash
@@ -437,9 +442,11 @@ docker mcp server restart <server-name>-mcp
    docker pull --verbose ghcr.io/doctorbrobotnik/<server-name>-mcp:latest
    ```
 
-5. **Check authentication (for private images):**
-   - Most images are public and don't require authentication
-   - If you see "401 Unauthorized", you may need to authenticate to GHCR
+5. **Authentication Issues:**
+   - **All images are automatically public** - no authentication should be required
+   - If you see "401 Unauthorized", the image may not have been built yet
+   - Check GitHub Actions workflow has completed successfully
+   - Images become public immediately after successful build
 
 ---
 
@@ -488,6 +495,48 @@ docker mcp server restart <server-name>-mcp
 3. Only enable servers you actively use
 4. Monitor server logs for unexpected behavior
 5. Keep Docker Desktop and MCP servers updated
+
+---
+
+## CI/CD Automation and Public Images
+
+### Automated Build Pipeline
+
+This repository uses **GitHub Actions** to automatically build and publish Docker images:
+
+**What Happens When Code is Pushed:**
+1. GitHub Actions detects changes to MCP server directories
+2. Builds Docker images for each modified server
+3. Pushes images to GitHub Container Registry (GHCR)
+4. **Automatically sets images to public visibility**
+5. Images are immediately available for pull
+
+**Key Workflow Step - Public Visibility:**
+```yaml
+- name: Make package public
+  run: |
+    gh api --method PATCH /user/packages/container/${{ matrix.image-name }}/access -f visibility=public
+```
+
+This automation step ensures that:
+- All images are **immediately accessible** after successful builds
+- Users **do NOT need GitHub authentication** to pull images
+- **No manual visibility changes** are required by maintainers
+- The user experience is **simplified** - just `docker pull` and go
+
+**Benefits for Users:**
+- No GitHub account required
+- No personal access tokens needed
+- No docker login command necessary
+- Images available within minutes of code push
+- Consistent, automated deployment process
+
+### Viewing Build Status
+
+Check the status of automated builds:
+- [GitHub Actions tab](https://github.com/DoctorBrobotnik/MCPs/actions) - shows all workflow runs
+- Green checkmark = build successful, image is public and available
+- Failed workflows are automatically logged for debugging
 
 ---
 
@@ -660,7 +709,7 @@ Currently, MCP servers run locally on the same machine as Claude Desktop. Remote
 ### How do I update to the latest version?
 
 ```bash
-# Pull the latest image from GHCR
+# Pull the latest image from GHCR (no authentication required)
 docker pull ghcr.io/doctorbrobotnik/<server-name>-mcp:latest
 
 # Restart the server
@@ -669,7 +718,11 @@ docker mcp server restart <server-name>-mcp
 # Restart Claude
 ```
 
-The images are automatically built and published when code is pushed to the repository, so you always get the latest version when you pull.
+The images are automatically built and published when code is pushed to the repository, so you always get the latest version when you pull. All images are public - no GitHub login required.
+
+### Do I need a GitHub account to use these MCP servers?
+
+No! All Docker images are automatically set to public visibility after being built. You can pull and use them without any GitHub account, authentication, or personal access tokens.
 
 ---
 

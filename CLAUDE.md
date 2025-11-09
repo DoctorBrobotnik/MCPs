@@ -9,9 +9,10 @@ This is a **public repository** that contains Model Context Protocol (MCP) serve
 **MCP servers in this repository are built and published automatically via GitHub Actions CI/CD workflow.** When code is pushed to this repository, a GitHub Actions workflow automatically:
 1. Builds Docker images for each MCP server
 2. Pushes images to GitHub Container Registry (GHCR)
-3. Makes images available for immediate use
+3. **Automatically sets images to public visibility** (no authentication required)
+4. Makes images available for immediate use
 
-Users no longer need to build Docker images locally—pre-built images are available from the registry.
+Users no longer need to build Docker images locally—pre-built images are available from the registry without any GitHub authentication.
 
 ## Official MCP Documentation
 
@@ -286,15 +287,17 @@ After committing and pushing files to GitHub, the automated workflow will:
 2. Build Docker images for each server
 3. Run automated tests and validation
 4. Push images to GitHub Container Registry (GHCR): `ghcr.io/doctorbrobotnik/[service-name]-mcp`
-5. Images are immediately available for use without local building
+5. **Automatically set images to public visibility** (no manual step required)
+6. Images are immediately available for use without local building
 
 **User Setup Instructions:**
-Users can now pull pre-built images directly:
+Users can now pull pre-built images directly without authentication:
 ```bash
+# No GitHub login required - images are automatically public
 docker pull ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
 ```
 
-No local Docker builds are required—the repository's GitHub Actions workflow handles all image building and publishing.
+No local Docker builds are required—the repository's GitHub Actions workflow handles all image building, publishing, and public visibility configuration.
 
 ## Creating Documentation with docs-guide-writer Agent
 
@@ -933,37 +936,53 @@ This repository uses **GitHub Actions CI/CD** to automatically build and publish
 
 ### GitHub Actions Workflow File
 
-The workflow configuration is located at: `.github/workflows/build-and-publish-mcps.yml`
+The workflow configuration is located at: `.github/workflows/build-docker-images.yml`
 
 **Key features:**
 - ✅ Multi-platform builds (Linux x86_64 and ARM64)
 - ✅ Automatic image tagging with commit SHA and `latest`
 - ✅ Push to GitHub Container Registry (GHCR)
+- ✅ **Automatic public visibility** - Images are automatically set to public after build
 - ✅ Docker image metadata (labels, annotations)
 - ✅ Secrets scanning and validation
 - ✅ Buildx caching for faster builds
 
+**Public Image Access:**
+All GHCR images are automatically made public as part of the CI/CD workflow. After a successful build and push, the workflow executes:
+```yaml
+- name: Make package public
+  run: |
+    gh api --method PATCH /user/packages/container/${{ matrix.image-name }}/access -f visibility=public
+```
+
+This means:
+- **No authentication required** for users to pull images
+- **Images are immediately available** after successful GitHub Actions build
+- **No manual visibility changes needed** - fully automated
+- **Simplified user experience** - users can pull images without GitHub credentials
+
 ### Pulling Pre-Built Images
 
-Users and developers can pull pre-built images directly:
+Users and developers can pull pre-built images directly **without authentication**:
 
 ```bash
-# Pull the latest version
+# Pull the latest version (no login required - images are public)
 docker pull ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
 
 # Pull a specific version (by commit SHA)
 docker pull ghcr.io/doctorbrobotnik/[service-name]-mcp:abc1234
 ```
 
-### Image Registry Authentication
+**Important:** All images are automatically set to public visibility after being built, so users do NOT need to authenticate with GitHub to pull images.
 
-For pulling from GHCR, users may need to authenticate with GitHub:
+### Image Registry Authentication (Not Required for Public Images)
+
+Authentication is **NOT required** for pulling images from this repository, as all images are automatically made public by the CI/CD workflow.
+
+However, if you need to authenticate for other reasons (private forks, etc.):
 
 ```bash
-# Login to GitHub Container Registry
-echo ${{ github.token }} | docker login ghcr.io -u $ --password-stdin
-
-# Or use a GitHub Personal Access Token (PAT)
+# Login to GitHub Container Registry (only if needed)
 echo "YOUR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
 ```
 
@@ -976,6 +995,7 @@ echo "YOUR_PAT" | docker login ghcr.io -u USERNAME --password-stdin
 - **Versioning** - Automatic image tagging with commit information
 - **User Experience** - Users pull pre-built images, no local builds needed
 - **Updates** - Images automatically updated when code is pushed
+- **Public Access** - Images are automatically made public, no authentication required for users
 
 ### Development Workflow with CI/CD
 
@@ -1480,11 +1500,14 @@ Planning documents serve as persistent records of implementation strategy:
 When creating a new MCP server README, include setup instructions that reflect the GitHub Actions CI/CD workflow:
 
 ### Step 1: Pull the Pre-Built Image
-Users pull the pre-built image from GitHub Container Registry (no local build needed):
+Users pull the pre-built image from GitHub Container Registry (no local build or authentication needed):
 
 ```bash
+# No GitHub login required - all images are automatically public
 docker pull ghcr.io/doctorbrobotnik/[service-name]-mcp:latest
 ```
+
+**Note:** Images are automatically set to public visibility by the CI/CD workflow, so users can pull them without any GitHub authentication.
 
 ### Step 2: Add Required Secrets (if needed)
 For servers that need API keys, tokens, or credentials:
