@@ -570,12 +570,12 @@ Once GitHub Actions successfully builds and publishes your image to GHCR, update
 
 **PowerShell (Windows):**
 ```powershell
-code "$env:USERPROFILE\.docker\mcp\catalogs\my-custom-catalog.yaml"
+code "$env:USERPROFILE\Repos\Personal\MCP_Catalogs\catalogs\my-custom-catalog.yaml"
 ```
 
 **Bash/WSL/Git Bash:**
 ```bash
-code ~/.docker/mcp/catalogs/my-custom-catalog.yaml
+code ~/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml
 ```
 
 Add this entry to the catalog (replace placeholders):

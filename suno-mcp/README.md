@@ -152,7 +152,7 @@ SUNO_API_KEY=sk_your_actual_api_key_here
 ### Step 3: Catalog Configuration
 
 The `suno-mcp` server entry has been automatically added to your custom catalog at:
-- Windows: `%USERPROFILE%\.docker\mcp\catalogs\my-custom-catalog.yaml`
+- Windows: `%USERPROFILE%\Repos\Personal\MCP_Catalogs\catalogs\my-custom-catalog.yaml`
 
 The catalog entry looks like:
 
@@ -1012,7 +1012,7 @@ cat Dockerfile
 2. Check catalog configuration:
    ```bash
    # Windows
-   type %USERPROFILE%\.docker\mcp\catalogs\my-custom-catalog.yaml
+   type %USERPROFILE%\Repos\Personal\MCP_Catalogs\catalogs\my-custom-catalog.yaml
    ```
 3. Verify secret is set:
    ```bash

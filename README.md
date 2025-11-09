@@ -175,7 +175,7 @@ All MCP servers follow this pattern:
    ```
 
 3. **Register in custom catalog**
-   - Edit `~/.docker/mcp/catalogs/my-custom-catalog.yaml`
+   - Edit `~/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml`
    - Add server entry with image: `ghcr.io/doctorbrobotnik/<server-name>-mcp:latest`
    - See server-specific guide for catalog format
 
@@ -215,7 +215,7 @@ All MCP servers follow this pattern:
    ```
 
 4. **Register in Catalog**
-   - Edit `~/.docker/mcp/catalogs/my-custom-catalog.yaml`
+   - Edit `~/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml`
    - Add Discord server entry with image: `ghcr.io/doctorbrobotnik/discord-mcp:latest`
 
 5. **Enable the Server**
@@ -247,7 +247,7 @@ All MCP servers follow this pattern:
    ```
 
 4. **Register in Catalog**
-   - Edit `~/.docker/mcp/catalogs/my-custom-catalog.yaml`
+   - Edit `~/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml`
    - Add Suno server entry with image: `ghcr.io/doctorbrobotnik/suno-mcp:latest`
 
 5. **Enable the Server**
@@ -382,7 +382,7 @@ docker mcp server restart <server-name>-mcp
 
 3. Verify catalog entry has correct image URL:
    ```bash
-   cat ~/.docker/mcp/catalogs/my-custom-catalog.yaml
+   cat ~/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml
    ```
    Should show: `image: ghcr.io/doctorbrobotnik/<server-name>-mcp:latest`
 
@@ -394,8 +394,8 @@ docker mcp server restart <server-name>-mcp
 5. **Restart Claude** (required after any changes)
 
 6. Check catalog configuration exists:
-   - Windows: `%USERPROFILE%\.docker\mcp\catalogs\my-custom-catalog.yaml`
-   - Mac/Linux: `~/.docker/mcp/catalogs/my-custom-catalog.yaml`
+   - Windows: `%USERPROFILE%\Repos\Personal\MCP_Catalogs\catalogs\my-custom-catalog.yaml`
+   - Mac/Linux: `~/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml`
 
 ---
 

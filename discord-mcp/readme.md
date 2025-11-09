@@ -102,7 +102,7 @@ Note: These commands work the same on Windows PowerShell, Bash, WSL, and Git Bas
 ### Step 3: Catalog Configuration
 
 The discord-mcp server entry has been automatically added to your custom catalog at:
-`$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
+`$env:USERPROFILE/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml`
 
 **Important:** Verify the catalog entry uses the correct `secrets` format:
 
@@ -377,7 +377,7 @@ docker build -t discord-mcp ~/Repos/Personal/MCPs/discord-mcp
 ### Tools Not Appearing in Claude
 
 1. Restart Claude
-2. Check catalog entry exists in `$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
+2. Check catalog entry exists in `$env:USERPROFILE/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml`
 3. Verify Docker image built successfully: `docker images discord-mcp`
 4. **Verify catalog uses `secrets` format (not `env`):**
    ```yaml

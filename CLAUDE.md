@@ -712,7 +712,7 @@ See MCP_Builder_Instruction_Template.md for detailed setup instructions.
 ```powershell
 # Correct - PowerShell syntax
 mkdir "$env:USERPROFILE\Repos\Personal\MCPs\test-mcp"
-code "$env:USERPROFILE\.docker\mcp\catalogs\custom.yaml"
+code "$env:USERPROFILE\Repos\Personal\MCP_Catalogs\catalogs\custom.yaml"
 
 # Docker commands use forward slashes
 docker build -t test-mcp $env:USERPROFILE/Repos/Personal/MCPs/test-mcp
@@ -733,7 +733,7 @@ mkdir $HOME\Repos\Personal\MCPs       # Undefined in PowerShell
 ```bash
 # Correct - Bash syntax
 mkdir -p ~/Repos/Personal/MCPs/test-mcp
-nano ~/.docker/mcp/catalogs/custom.yaml
+nano ~/Repos/Personal/MCP_Catalogs/catalogs/custom.yaml
 
 # In WSL, paths can use /mnt/c/Users/...
 mkdir -p /mnt/c/Users/WillLyons/Repos/Personal/MCPs/test-mcp
@@ -754,7 +754,7 @@ mkdir "C:\Users\WillLyons"                     # Backslashes don't work in bash
 ```bash
 # Correct - Git Bash syntax
 mkdir -p ~/Repos/Personal/MCPs/test-mcp
-code ~/.docker/mcp/catalogs/custom.yaml
+code ~/Repos/Personal/MCP_Catalogs/catalogs/custom.yaml
 
 # Docker commands use forward slashes
 docker build -t test-mcp ~/Repos/Personal/MCPs/test-mcp
@@ -1057,7 +1057,7 @@ All MCP server development is version-controlled with Git and hosted on GitHub a
 
 **Every new MCP server MUST be registered in the custom catalog BEFORE committing to git.**
 
-**Location**: `$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
+**Location**: `$env:USERPROFILE/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml`
 
 **Required Entry Template (for GitHub Actions-built servers):**
 ```yaml
@@ -1125,7 +1125,7 @@ docker mcp server enable [service-name]-mcp
 
 1. **After registering in local catalog**, navigate to catalogs directory:
    ```bash
-   cd $env:USERPROFILE/.docker/mcp/catalogs
+   cd $env:USERPROFILE/Repos/Personal/MCP_Catalogs/catalogs
    ```
 
 2. **Stage the updated catalog file**:
@@ -1150,7 +1150,7 @@ docker mcp server enable [service-name]-mcp
 
 **Example: Suno MCP Registration Commit:**
 ```bash
-cd $env:USERPROFILE/.docker/mcp/catalogs
+cd $env:USERPROFILE/Repos/Personal/MCP_Catalogs/catalogs
 git add my-custom-catalog.yaml
 git commit -m "Register suno-mcp server - Add 10 music generation tools"
 git push origin main
@@ -1160,7 +1160,7 @@ git push origin main
 If you need to restore catalogs from backup:
 ```bash
 git clone https://github.com/DoctorBrobotnik/MCP_Catalogs.git
-cp MCP_Catalogs/catalogs/*.yaml $env:USERPROFILE/.docker/mcp/
+cp MCP_Catalogs/catalogs/*.yaml $env:USERPROFILE/Repos/Personal/MCP_Catalogs/
 ```
 
 **Why Catalogs Are Backed Up:**
@@ -1268,7 +1268,7 @@ Restart Claude for the tools to appear.
 
 4. **Backup catalog changes to MCP_Catalogs repo** (Step 8 of workflow):
    ```bash
-   cd $env:USERPROFILE/.docker/mcp/catalogs
+   cd $env:USERPROFILE/Repos/Personal/MCP_Catalogs/catalogs
    git add my-custom-catalog.yaml
    git commit -m "Register [service-name]-mcp server"
    git push origin main
@@ -1531,7 +1531,7 @@ Get your token from:
 
 ### Step 3: Register in Custom Catalog
 The server entry must be added to the custom catalog at:
-`$env:USERPROFILE/.docker/mcp/catalogs/my-custom-catalog.yaml`
+`$env:USERPROFILE/Repos/Personal/MCP_Catalogs/catalogs/my-custom-catalog.yaml`
 
 **Example catalog entry:**
 ```yaml
